@@ -293,7 +293,7 @@ class Quaternion(object):
         return Quaternion._first_eigenvector(K)
 
     @staticmethod
-    def average(*quaternions, weights=None):
+    def average(*quaternions, weights=()):
         '''
         Return the quaternion such that its matrix minimizes the square distance
         to the matrices of the quaternions in the argument list.
