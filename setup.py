@@ -9,7 +9,7 @@ setup(
     author_email='matias@satellogic.com',
     long_description='This is a library for dealing with quaternions in python in a unified way.',
     packages=find_packages(exclude=["tests"]),
-    license="?",
+    license="GPLv3",
     classifiers=[
         'Development Status :: 1 - Beta',
         'Environment :: Console',
