@@ -10,7 +10,7 @@ with open(os.path.join("quaternions", "version.py")) as fp:
 
 
 setup(
-    name='quaternions',
+    name='satellogic_quaternions',
     version=version["__version__"],
     author='Matias Graña',
     author_email='matias@satellogic.com',

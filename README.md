@@ -3,6 +3,12 @@ Quaternions library
 
 This is a library for dealing with quaternions in python in a unified way.
 
+To install it:
+
+```bash
+$ pip install satellogic_quaternions
+```
+
 Examples of code:
 
 ```python
