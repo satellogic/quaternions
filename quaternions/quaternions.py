@@ -301,7 +301,7 @@ class Quaternion(object):
         See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
         '''
         B = np.array([q.coordinates for q in quaternions])
-        if weights == ():
+        if not any(True for _ in weights):
             weights = np.ones(len(quaternions))
         M = B.T.dot(np.diag(weights)).dot(B)
 
@@ -313,7 +313,7 @@ class Quaternion(object):
         Naive implementation of std calculation, assuming small angles between quaternions
         and average.
         """
-        if weights == ():
+        if not any(True for _ in weights):
             weights = np.ones(len(quaternions))
         q_average = Quaternion.average(*quaternions, weights=weights)
         diffs = np.array([q_average.distance(quat) for quat in quaternions])
@@ -322,14 +322,15 @@ class Quaternion(object):
         return q_average, stddev
 
     @staticmethod
-    def average_and_std_lerner(*quaternions):
+    def average_and_std_lerner(*quaternions, weights=()):
         """
         Calcula el desvio estandar de los cuaterniones como el sigma lerner de la matriz de covarianza
         asociada a los angulos de rotación del cuaternion del error contra el cuaternion promedio
         :param quaternions: lista de objetos Quaternion
+        :param weights:
         :return: desvio estandar en grados
         """
-        average = Quaternion.average(*quaternions)
+        average = Quaternion.average(*quaternions, weights=weights)
         diffs = [quat / average for quat in quaternions]
         angles_list = np.array([[2 * diff.coordinates[i] for i in [1, 2, 3]] for diff in diffs])
         covariance_matrix = covariance_matrix_from_angles(angles_list)
@@ -349,7 +350,7 @@ class Quaternion(object):
 
         See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
         '''
-        if weights == ():
+        if not any(True for _ in weights):
             weights = np.ones(len(quaternions)) / len(quaternions)
         q_average = Quaternion.average(*quaternions, weights=weights)
 
