@@ -18,9 +18,9 @@ setup(
     packages=find_packages(exclude=["tests"]),
     license="GPLv3",
     classifiers=[
-        'Development Status :: 1 - Beta',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
-        'Intended Audience :: Satellites',
+        'Intended Audience :: Science/Research',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Python Modules',
