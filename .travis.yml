@@ -8,10 +8,9 @@ python:
       - "3.6-dev"
       - "nightly" # currently points to 3.7-dev
 install:
-    - "pip install -r requirements.txt"
+    - "pip install --editable .[dev]"
     - "pip install -r requirements-test.txt"
     - "pip install python-coveralls"
-    - "pip install -e ."
 script:
     - "pytest -v  --cov-report= --cov=quaternions tests/"
 after_script:
