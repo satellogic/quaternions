@@ -1,7 +1,7 @@
 import functools
 import numpy as np
 from collections import Iterable
-
+from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner)
 
 class QuaternionError(Exception):
     pass
