@@ -1,7 +1,7 @@
 import functools
 import numpy as np
 from collections import Iterable
-from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner)
+from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner, orthogonal_matrix)
 
 class QuaternionError(Exception):
     pass
@@ -337,45 +337,27 @@ class Quaternion(object):
         return sigma_lerner(covariance_matrix)
 
     @staticmethod
-    def average_and_std_theoretical(*quaternions, weights=()):
+    def average_and_covariance(*quaternions, R=np.eye(3)):
         '''
         Returns the quaternion such that its matrix minimizes the square distance
-        to the matrices of the quaternions in the argument list, 3x3 cov_dev matrix
-        asociated with the calculation, and sigma_lerner asociated with the latter.
-
-        For computing cov_dev matrix from input weights, the following relation is
-        taken into account:
-            * R = sigma_lerne**2*I
-            * sigma_lerner**2 = 1/weights**2
+        to the matrices of the quaternions in the argument list, and the resulting
+        covariance matrix asociated with that quaternion. Input matrix R (3x3) is
+        assume to be the same for all input quaternions, and in rads**2
 
         See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
         '''
-        if not any(True for _ in weights):
-            weights = np.ones(len(quaternions)) / len(quaternions)
-        q_average = Quaternion.average(*quaternions, weights=weights)
+        q_average = Quaternion.average(*quaternions)
 
-        def rot_matrix(quat):
-            return np.array([[0, -quat.qk, quat.qj],
-                             [quat.qk, 0, -quat.qi],
-                             [-quat.qj, quat.qi, 0]])
-
-        def orthogonal_matrix(quat):
-            return np.vstack((quat.qr * np.eye(3) + rot_matrix(quat),
-                              -np.array([quat.qi, quat.qj, quat.qk])))
+        R_inverse = np.linalg.inv(R)
         orthogonal_matrix_sum = np.zeros((4, 4))
-        for q, w in zip(quaternions, weights):
-            orthogonal_matrix_sum += 1 / w**2 * \
-                (orthogonal_matrix(q).dot(orthogonal_matrix(q).T))
+        for q in quaternions:
+            orthogonal_matrix_sum += orthogonal_matrix(q).dot(
+                R_inverse.dot(orthogonal_matrix(q).T))
 
         cov_dev_matrix = np.linalg.inv(orthogonal_matrix(q_average).T.dot(
             orthogonal_matrix_sum.dot(orthogonal_matrix(q_average))))
 
-        def compute_sigma_lerner(matrix):
-            return 1.87 * np.sqrt(np.max(np.real(np.linalg.eigvals(matrix))))
-
-        sigma_lerner = compute_sigma_lerner(cov_dev_matrix)
-
-        return q_average, cov_dev_matrix, sigma_lerner
+        return q_average, cov_dev_matrix
 
     @staticmethod
     def Unit():
