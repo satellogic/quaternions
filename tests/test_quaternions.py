@@ -73,6 +73,13 @@ class QuaternionTest(unittest.TestCase):
                 v2 = a1 * frame_2[0] + a2 * frame_2[1]
                 np.testing.assert_allclose(q.matrix.dot(v1), v2, atol=1e-10)
 
+    def test_qmethod_without_probs(self):
+        frame_1 = np.array([[2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]])
+        frame_2 = np.array([[0.8, 0.6, 0], [-0.6, 0.8, 0]])
+        q_prob = Quaternion.from_qmethod(frame_1.T, frame_2.T, np.ones(2))
+        q_noprob = Quaternion.from_qmethod(frame_1.T, frame_2.T)
+        assert q_prob == q_noprob
+
     def test_qmethod_with_probability(self):
         frame_1 = np.array([[2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]])
         frame_2 = np.array([[0.8, 0.6, 0], [-0.6, 0.8, 0]])
