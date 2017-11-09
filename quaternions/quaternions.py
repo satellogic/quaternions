@@ -19,6 +19,7 @@ class Quaternion(object):
         self.qj = qj
         self.qk = qk
 
+        self.validate_numeric_stability = validate_numeric_stability
         if validate_numeric_stability:
             if self._squarenorm() < self.tolerance * self.tolerance:
                 raise QuaternionError('provided numerically unstable quaternion: %s' % self)
@@ -47,7 +48,8 @@ class Quaternion(object):
         elif isinstance(p, Iterable):
             return self.matrix.dot(p)
         else:
-            return Quaternion(self.qr * p, self.qi * p, self.qj * p, self.qk * p)
+            return Quaternion(self.qr * p, self.qi * p, self.qj * p, self.qk * p,
+                              validate_numeric_stability=self.validate_numeric_stability)
 
     def __rmul__(self, p):
         return self.__mul__(p)
@@ -114,7 +116,7 @@ class Quaternion(object):
         imag_norm = np.linalg.norm(imag)
         if imag_norm == 0:
             i_part = 0 if self.qr > 0 else np.pi
-            return Quaternion(np.log(norm), i_part, 0, 0)
+            return Quaternion(np.log(norm), i_part, 0, 0, validate_numeric_stability=False)
         imag = imag / imag_norm * np.arctan2(imag_norm, self.qr / norm)
         return Quaternion(np.log(norm), *imag)
 
@@ -151,22 +153,8 @@ class Quaternion(object):
 
     @property
     def basis(self):
-        qr, qi, qj, qk = self.coordinates
-        b0 = np.array([
-            qr ** 2 + qi ** 2 - qj ** 2 - qk ** 2,
-            2 * qr * qk + 2 * qi * qj,
-            -2 * qr * qj + 2 * qi * qk
-        ])
-        b1 = np.array([
-            -2 * qr * qk + 2 * qi * qj,
-            qr ** 2 - qi ** 2 + qj ** 2 - qk ** 2,
-            2 * qr * qi + 2 * qj * qk
-        ])
-        b2 = np.array([
-            2 * qr * qj + 2 * qi * qk,
-            -2 * qr * qi + 2 * qj * qk,
-            qr ** 2 - qi ** 2 - qj ** 2 + qk ** 2
-        ])
+        # TODO: deprecate basis, it is not used here and it can be obtained with matrix
+        b0, b1, b2 = self.matrix
         return b0, b1, b2
 
     @property
@@ -206,6 +194,7 @@ class Quaternion(object):
         Notice that Tetra gives a different roll angle, so this is not
         a fixed standard.
         '''
+        # TODO: deprecate this method; move it to projects that need it
         twisted = self.OpticalAxisFirst() * self
         ra, dec, roll = twisted.ra_dec_roll
         return np.array([-ra, dec, roll - 180])

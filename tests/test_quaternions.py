@@ -1,6 +1,6 @@
 import unittest
 from hypothesis import given, assume
-from hypothesis.strategies import floats
+from hypothesis.strategies import floats, integers
 import numpy as np
 
 from quaternions import Quaternion, QuaternionError
@@ -12,6 +12,25 @@ class QuaternionTest(unittest.TestCase):
                                    [-.275451, .932257, -.23457],
                                    [.357073, .325773, .875426]])
     schaub_result = np.array([.961798, -.14565, .202665, .112505])
+
+    def test_addition(self):
+        q1 = Quaternion(1, 2, 3, 4)
+        q2 = Quaternion(-1, 0, 1, 2)
+        expected = Quaternion(0, 2, 4, 6)
+        np.testing.assert_allclose(expected.coordinates, (q1 + q2).coordinates)
+
+    def test_subtraction(self):
+        q1 = Quaternion(1, 2, 3, 4)
+        q2 = Quaternion(-1, 0, 1, 2)
+        expected = Quaternion(2, 2, 2, 2)
+        np.testing.assert_allclose(expected.coordinates, (q1 - q2).coordinates)
+
+    def test_repr(self):
+        q = Quaternion(0, 1, 2, 3)
+        r = repr(q)
+        obtained = eval(r)
+        assert isinstance(obtained, Quaternion)
+        np.testing.assert_allclose(q.coordinates, obtained.coordinates)
 
     def test_matrix_respects_product(self):
         q1 = Quaternion.exp(Quaternion(0, .1, .02, -.3))
@@ -53,6 +72,13 @@ class QuaternionTest(unittest.TestCase):
                 v1 = a1 * frame_1[0] + a2 * frame_1[1]
                 v2 = a1 * frame_2[0] + a2 * frame_2[1]
                 np.testing.assert_allclose(q.matrix.dot(v1), v2, atol=1e-10)
+
+    def test_qmethod_without_probs(self):
+        frame_1 = np.array([[2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]])
+        frame_2 = np.array([[0.8, 0.6, 0], [-0.6, 0.8, 0]])
+        q_prob = Quaternion.from_qmethod(frame_1.T, frame_2.T, np.ones(2))
+        q_noprob = Quaternion.from_qmethod(frame_1.T, frame_2.T)
+        assert q_prob == q_noprob
 
     def test_qmethod_with_probability(self):
         frame_1 = np.array([[2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]])
@@ -324,3 +350,10 @@ class ParameterizedTests(unittest.TestCase):
         q = Quaternion(qr, qi, qj, qk)
         assert ~q == q.inverse() == q.conjugate()
         assert q * ~q == ~q * q == Quaternion.Unit()
+
+    @given(integers(min_value=0, max_value=5))
+    def test_integrate(self, number_of_vectors):
+        vectors = [np.array([0, 0, i / 10]) for i in range(1, number_of_vectors + 1)]
+        v = Quaternion.integrate_from_velocity_vectors(vectors)
+        expected = [0, 0, number_of_vectors * (number_of_vectors + 1) / 20]
+        np.testing.assert_allclose(expected, v)
