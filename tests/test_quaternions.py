@@ -350,8 +350,7 @@ class QuaternionStdDevTests(unittest.TestCase):
 
         for star_vectors_noise_arcsec in self.results.keys():
             quat_diff_matlab_quats = self.quat_diff_matlab_quats[star_vectors_noise_arcsec]
-            _, mean_total_rotation_angle = Quaternion.average_and_std_naive(*quat_diff_matlab_quats)
-            mean_total_rotation_angle_deg = np.degrees(mean_total_rotation_angle)
+            _, mean_total_rotation_angle_deg = Quaternion.average_and_std_naive(*quat_diff_matlab_quats)
 
             assert abs(mean_total_rotation_angle_deg - self.results[star_vectors_noise_arcsec]['mean_total_angle'])\
                    < self.tolerance_deg

@@ -310,31 +310,33 @@ class Quaternion(object):
     @staticmethod
     def average_and_std_naive(*quaternions, weights=()):
         """
-        Naive implementation of std calculation, assuming small angles between quaternions
-        and average.
+        Naive implementation of std. dev. calculation, assuming small angles between quaternions
+        and average. Returns average quaternion and stddev of input quaternion list in deg
         """
         if not any(True for _ in weights):
             weights = np.ones(len(quaternions))
         q_average = Quaternion.average(*quaternions, weights=weights)
         diffs = np.array([q_average.distance(quat) for quat in quaternions])
         # TODO: check that this way of taking into account weights in stddev calculation is ok
-        stddev = np.sqrt(sum((diffs ** 2) * weights) / np.sum(weights))
+        stddev = np.degrees(np.sqrt(sum((diffs ** 2) * weights) / np.sum(weights)))
         return q_average, stddev
 
     @staticmethod
     def average_and_std_lerner(*quaternions, weights=()):
         """
-        Calcula el desvio estandar de los cuaterniones como el sigma lerner de la matriz de covarianza
-        asociada a los angulos de rotación del cuaternion del error contra el cuaternion promedio
+        Calculates the std. dev. as 1.87 of the root of the maximum eigenvalue of the covariance matrix,
+        called sigma lerner. This covariance matriz is the one asociated with the rotation angles of
+        each input quaternion agains the average one. Returns the average quaternion anf the sigma lerner
+        in deg.
         :param quaternions: lista de objetos Quaternion
         :param weights:
-        :return: desvio estandar en grados
+        :return: average quaternions, sigma lerner
         """
-        average = Quaternion.average(*quaternions, weights=weights)
-        diffs = [quat / average for quat in quaternions]
+        q_average = Quaternion.average(*quaternions, weights=weights)
+        diffs = [quat / q_average for quat in quaternions]
         angles_list = np.array([[2 * diff.coordinates[i] for i in [1, 2, 3]] for diff in diffs])
         covariance_matrix = covariance_matrix_from_angles(angles_list)
-        return sigma_lerner(covariance_matrix)
+        return q_average, np.degrees(sigma_lerner(covariance_matrix))
 
     @staticmethod
     def average_and_covariance(*quaternions, R=np.eye(3)):
