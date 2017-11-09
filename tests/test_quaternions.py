@@ -13,6 +13,12 @@ class QuaternionTest(unittest.TestCase):
                                    [.357073, .325773, .875426]])
     schaub_result = np.array([.961798, -.14565, .202665, .112505])
 
+    def test_addition(self):
+        q1 = Quaternion(1, 2, 3, 4)
+        q2 = Quaternion(-1, 0, 1, 2)
+        expected = Quaternion(0, 2, 4, 6)
+        np.testing.assert_allclose(expected.coordinates, (q1 + q2).coordinates)
+
     def test_matrix_respects_product(self):
         q1 = Quaternion.exp(Quaternion(0, .1, .02, -.3))
         q2 = Quaternion.exp(Quaternion(0, -.2, .21, .083))
