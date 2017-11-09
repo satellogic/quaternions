@@ -25,6 +25,13 @@ class QuaternionTest(unittest.TestCase):
         expected = Quaternion(2, 2, 2, 2)
         np.testing.assert_allclose(expected.coordinates, (q1 - q2).coordinates)
 
+    def test_repr(self):
+        q = Quaternion(0, 1, 2, 3)
+        r = repr(q)
+        obtained = eval(r)
+        assert isinstance(obtained, Quaternion)
+        np.testing.assert_allclose(q.coordinates, obtained.coordinates)
+
     def test_matrix_respects_product(self):
         q1 = Quaternion.exp(Quaternion(0, .1, .02, -.3))
         q2 = Quaternion.exp(Quaternion(0, -.2, .21, .083))
