@@ -19,6 +19,7 @@ class Quaternion(object):
         self.qj = qj
         self.qk = qk
 
+        self.validate_numeric_stability = validate_numeric_stability
         if validate_numeric_stability:
             if self._squarenorm() < self.tolerance * self.tolerance:
                 raise QuaternionError('provided numerically unstable quaternion: %s' % self)
@@ -47,7 +48,8 @@ class Quaternion(object):
         elif isinstance(p, Iterable):
             return self.matrix.dot(p)
         else:
-            return Quaternion(self.qr * p, self.qi * p, self.qj * p, self.qk * p)
+            return Quaternion(self.qr * p, self.qi * p, self.qj * p, self.qk * p,
+                              validate_numeric_stability=self.validate_numeric_stability)
 
     def __rmul__(self, p):
         return self.__mul__(p)
