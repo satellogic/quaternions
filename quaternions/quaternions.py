@@ -151,6 +151,7 @@ class Quaternion(object):
 
     @property
     def basis(self):
+        # TODO: deprecate basis, it is not used here and it can be obtained with matrix
         b0, b1, b2 = self.matrix
         return b0, b1, b2
 
