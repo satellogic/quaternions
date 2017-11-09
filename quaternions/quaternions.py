@@ -194,6 +194,7 @@ class Quaternion(object):
         Notice that Tetra gives a different roll angle, so this is not
         a fixed standard.
         '''
+        # TODO: deprecate this method; move it to projects that need it
         twisted = self.OpticalAxisFirst() * self
         ra, dec, roll = twisted.ra_dec_roll
         return np.array([-ra, dec, roll - 180])
