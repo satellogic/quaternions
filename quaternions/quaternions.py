@@ -151,22 +151,7 @@ class Quaternion(object):
 
     @property
     def basis(self):
-        qr, qi, qj, qk = self.coordinates
-        b0 = np.array([
-            qr ** 2 + qi ** 2 - qj ** 2 - qk ** 2,
-            2 * qr * qk + 2 * qi * qj,
-            -2 * qr * qj + 2 * qi * qk
-        ])
-        b1 = np.array([
-            -2 * qr * qk + 2 * qi * qj,
-            qr ** 2 - qi ** 2 + qj ** 2 - qk ** 2,
-            2 * qr * qi + 2 * qj * qk
-        ])
-        b2 = np.array([
-            2 * qr * qj + 2 * qi * qk,
-            -2 * qr * qi + 2 * qj * qk,
-            qr ** 2 - qi ** 2 - qj ** 2 + qk ** 2
-        ])
+        b0, b1, b2 = self.matrix
         return b0, b1, b2
 
     @property
