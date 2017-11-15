@@ -4,6 +4,7 @@ import numpy as np
 def covariance_matrix_from_angles(angles_list):
     """
     Computes covariance matrix from 3d vectors list
+    :param angles_list: list of NumPy arrays
     """
     covariance_matrix = np.zeros((3, 3))
     for angles in angles_list:

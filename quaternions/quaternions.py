@@ -293,7 +293,7 @@ class Quaternion(object):
         return Quaternion._first_eigenvector(K)
 
     @staticmethod
-    def average(*quaternions, weights=()):
+    def average(*quaternions, weights=None):
         '''
         Return the quaternion such that its matrix minimizes the square distance
         to the matrices of the quaternions in the argument list.
@@ -301,19 +301,19 @@ class Quaternion(object):
         See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
         '''
         B = np.array([q.coordinates for q in quaternions])
-        if not any(True for _ in weights):
+        if weights is None:
             weights = np.ones(len(quaternions))
         M = B.T.dot(np.diag(weights)).dot(B)
 
         return Quaternion._first_eigenvector(M)
 
     @staticmethod
-    def average_and_std_naive(*quaternions, weights=()):
+    def average_and_std_naive(*quaternions, weights=None):
         """
         Naive implementation of std. dev. calculation, assuming small angles between quaternions
         and average. Returns average quaternion and stddev of input quaternion list in deg
         """
-        if not any(True for _ in weights):
+        if weights is None:
             weights = np.ones(len(quaternions))
         q_average = Quaternion.average(*quaternions, weights=weights)
         diffs = np.array([q_average.distance(quat) for quat in quaternions])
@@ -322,13 +322,13 @@ class Quaternion(object):
         return q_average, stddev
 
     @staticmethod
-    def average_and_std_lerner(*quaternions, weights=()):
+    def average_and_std_lerner(*quaternions, weights=None):
         """
         Calculates the std. dev. as 1.87 of the root of the maximum eigenvalue of the covariance matrix,
-        called sigma lerner. This covariance matriz is the one asociated with the rotation angles of
-        each input quaternion agains the average one. Returns the average quaternion anf the sigma lerner
+        called sigma lerner. This covariance matrix is the one asociated with the rotation angles of
+        each input quaternion agains the average one. Returns the average quaternion and the sigma lerner
         in deg.
-        :param quaternions: lista de objetos Quaternion
+        :param quaternions: Quaternion objects
         :param weights:
         :return: average quaternions, sigma lerner
         """
