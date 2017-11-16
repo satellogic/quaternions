@@ -274,6 +274,12 @@ class ParameterizedTests(unittest.TestCase):
                                        qback.coordinates,
                                        decimal=8)
 
+    def test_exp_identity(self):
+        assert Quaternion.Unit() == Quaternion.exp([0, 0, 0, 0])
+
+    def test_log_identity(self):
+        np.testing.assert_almost_equal(Quaternion.Unit().log(), [0, 0, 0, 0])
+
     @given(floats(min_value=-2, max_value=2),
            floats(min_value=-2, max_value=2),
            floats(min_value=-2, max_value=2))
