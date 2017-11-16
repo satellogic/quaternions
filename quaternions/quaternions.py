@@ -114,8 +114,8 @@ class Quaternion(object):
         if imag_norm == 0:
             return Quaternion(exp_norm, 0, 0, 0)
 
-        imag_renorm = np.sin(imag_norm) * imag / imag_norm
-        q = Quaternion(np.cos(imag_norm), *imag_renorm)
+        j, k, l = np.sin(imag_norm) * imag / imag_norm
+        q = Quaternion(np.cos(imag_norm), j, k, l)
 
         return exp_norm * q
 
@@ -131,8 +131,8 @@ class Quaternion(object):
             i_part = 0 if self.qr > 0 else np.pi
             return np.array([np.log(norm), i_part, 0, 0])
 
-        imag = imag / imag_norm * np.arctan2(imag_norm, self.qr / norm)
-        return np.array([np.log(norm), *imag])
+        j, k, l = imag / imag_norm * np.arctan2(imag_norm, self.qr / norm)
+        return np.array([np.log(norm), j, k, l])
 
     def distance(self, other):
         '''Returns the distance in radians between two unitary quaternions'''
