@@ -261,8 +261,8 @@ class Quaternion(object):
         This corresponds to the exponential of the quaternion with
         real part 0 and imaginary part 1/2 * xyz.
         '''
-        xyz_half = .5 * np.array(xyz)
-        return Quaternion.exp([0, *xyz_half])
+        a, b, c = .5 * np.array(xyz)
+        return Quaternion.exp([0, a, b, c ])
 
     @staticmethod
     def _first_eigenvector(matrix):
