@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='satellogic_quaternions',
-    version='0.1.3',
+    version='0.1.4.dev0',
     author='Matias Graña',
     author_email='matias@satellogic.com',
     long_description='This is a library for dealing with quaternions in python in a unified way.',
