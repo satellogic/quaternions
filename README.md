@@ -1,7 +1,16 @@
 Quaternions library
 ===================
 
+[![Coverage Status](https://coveralls.io/repos/github/satellogic/quaternions/badge.svg)](https://coveralls.io/github/satellogic/quaternions)
+[![Build Status](https://travis-ci.org/satellogic/quaternions.svg?branch=add_travis_ci)](https://travis-ci.org/satellogic/quaternions)
+
 This is a library for dealing with quaternions in python in a unified way.
+
+To install it:
+
+```bash
+$ pip install satellogic_quaternions
+```
 
 Examples of code:
 

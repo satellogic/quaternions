@@ -1,0 +1,4 @@
+hypothesis
+pytest 
+pytest-coverage
+flake8>=2.5.4
