@@ -14,12 +14,12 @@ class QuaternionTest(unittest.TestCase):
     schaub_result = np.array([.961798, -.14565, .202665, .112505])
 
     def test_matrix_respects_product(self):
-        q1 = Quaternion.exp(Quaternion(0, .1, .02, -.3))
-        q2 = Quaternion.exp(Quaternion(0, -.2, .21, .083))
+        q1 = Quaternion.exp([0, .1, .02, -.3])
+        q2 = Quaternion.exp([0, -.2, .21, .083])
         np.testing.assert_allclose((q1 * q2).matrix, q1.matrix.dot(q2.matrix))
 
     def test_quaternion_rotates_vector(self):
-        q1 = Quaternion.exp(Quaternion(0, .1, .02, -.3))
+        q1 = Quaternion.exp([0, .1, .02, -.3])
         vector = QuaternionTest.schaub_example_dcm[:, 1]
         rotated_vector = q1 * vector
         np.testing.assert_allclose(rotated_vector, q1.matrix.dot(vector), atol=1e-5, rtol=0)
@@ -99,7 +99,7 @@ class QuaternionTest(unittest.TestCase):
         np.testing.assert_allclose(q1.coordinates, avg.coordinates)
 
     def test_average_mild(self):
-        q1 = Quaternion.exp(Quaternion(0, .1, .3, .7))
+        q1 = Quaternion.exp([0, .1, .3, .7])
         quats_l = []
         quats_r = []
         for i in np.arange(-.1, .11, .05):
@@ -133,7 +133,7 @@ class QuaternionTest(unittest.TestCase):
         np.testing.assert_allclose(q1.coordinates, avg.coordinates)
 
     def test_average_weights_mild(self):
-        q1 = Quaternion.exp(Quaternion(0, .1, .3, .7))
+        q1 = Quaternion.exp([0, .1, .3, .7])
         quats_l = []
         quats_r = []
         weights = []
@@ -249,11 +249,11 @@ class ParameterizedTests(unittest.TestCase):
         # ignore numerically unstable quaternions:
         assume(np.linalg.norm([qi, qj, qk]) > Quaternion.tolerance)
         q = Quaternion(0, qi, qj, qk)
-        expq = q.exp()
+        expq = Quaternion.exp(q)
         qback = expq.log()
 
         np.testing.assert_almost_equal(q.coordinates,
-                                       qback.coordinates,
+                                       qback,
                                        decimal=8)
 
     @given(floats(min_value=-5, max_value=5),
@@ -268,7 +268,7 @@ class ParameterizedTests(unittest.TestCase):
             return
 
         logq = q.log()
-        qback = logq.exp()
+        qback = Quaternion.exp(logq)
 
         np.testing.assert_almost_equal(q.coordinates,
                                        qback.coordinates,
@@ -311,6 +311,8 @@ class ParameterizedTests(unittest.TestCase):
         assert q == q
         assert q * small == q
         assert q * not_small != q
+
+        np.testing.assert_almost_equal(q.distance(q), 0)
 
     @given(floats(min_value=-5, max_value=5),
            floats(min_value=-5, max_value=5),

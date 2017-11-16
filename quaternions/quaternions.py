@@ -10,6 +10,7 @@ class QuaternionError(Exception):
 class Quaternion(object):
     ''' A class that holds quaternions. It actually holds Q^op, as
     this is the way Schaub-Jenkins work with them.
+    Note: Quaternion is equal up to scale, but it's not stored normalized.
     '''
     tolerance = 1e-8
 
@@ -42,7 +43,7 @@ class Quaternion(object):
                 [self.qj, -self.qk,  self.qr,  self.qi],  # noqa
                 [self.qk,  self.qj, -self.qi,  self.qr]   # noqa
             ])
-            result = mat.dot(np.array(p.coordinates))
+            result = mat.dot(p.normalized().coordinates)
             return Quaternion(*result)
         elif isinstance(p, Iterable):
             return self.matrix.dot(p)
@@ -84,8 +85,8 @@ class Quaternion(object):
         compares as quaternions up to tolerance.
         Note: tolerance in coords, not in quaternions metrics.
         """
-        q1 = np.asarray(self.normalized().coordinates)
-        q2 = np.asarray(other.normalized().coordinates)
+        q1 = self.normalized().coordinates
+        q2 = other.normalized().coordinates
         dist = min(np.linalg.norm(q1 - q2), np.linalg.norm(q1 - (-q2)))
         return dist < self.tolerance
 
@@ -95,10 +96,20 @@ class Quaternion(object):
     def norm(self):
         return np.sqrt(self._squarenorm())
 
-    def exp(self):
-        exp_norm = np.exp(self.qr)
+    @classmethod
+    def exp(cls, arr):
+        """
+        exponent quaternion
+        :param arr: list of 4 items or Quaternion
+        :return: Quaternion
+        """
+        if isinstance(arr, Quaternion):
+            real, imag = arr.coordinates[0], arr.coordinates[1:]
+        else:
+            real, imag = arr[0], np.asarray(arr[1:])
 
-        imag = np.array([self.qi, self.qj, self.qk])
+        exp_norm = np.exp(real)
+
         imag_norm = np.linalg.norm(imag)
         if imag_norm == 0:
             return Quaternion(exp_norm, 0, 0, 0)
@@ -109,26 +120,34 @@ class Quaternion(object):
         return exp_norm * q
 
     def log(self):
+        """
+        logarithm of quaternion
+        :return: np.array with 4 items
+        """
         norm = self.norm()
         imag = np.array((self.qi, self.qj, self.qk)) / norm
         imag_norm = np.linalg.norm(imag)
         if imag_norm == 0:
             i_part = 0 if self.qr > 0 else np.pi
-            return Quaternion(np.log(norm), i_part, 0, 0)
+            return np.array([np.log(norm), i_part, 0, 0])
+
         imag = imag / imag_norm * np.arctan2(imag_norm, self.qr / norm)
-        return Quaternion(np.log(norm), *imag)
+        return np.array([np.log(norm), *imag])
 
     def distance(self, other):
         '''Returns the distance in radians between two unitary quaternions'''
-        quot = (self * other.conjugate()).positive_representant
-        return 2 * quot.log().norm()
+        quot = (self * other.conjugate()).normalized().positive_representant
+        return np.linalg.norm(np.multiply(2, quot.log()))
 
     def is_unitary(self):
         return abs(self._squarenorm() - 1) < self.tolerance
 
     @property
     def coordinates(self):
-        return self.qr, self.qi, self.qj, self.qk
+        """
+        :return: np.array of length 4
+        """
+        return np.array([self.qr, self.qi, self.qj, self.qk])
 
     @property
     def positive_representant(self):
@@ -186,7 +205,7 @@ class Quaternion(object):
 
     @property
     def rotation_vector(self):
-        return (2 * self.log()).coordinates[1:]
+        return (2 * self.log())[1:]
 
     @property
     def ra_dec_roll(self):
@@ -243,7 +262,7 @@ class Quaternion(object):
         real part 0 and imaginary part 1/2 * xyz.
         '''
         xyz_half = .5 * np.array(xyz)
-        return Quaternion(0, *xyz_half).exp()
+        return Quaternion.exp([0, *xyz_half])
 
     @staticmethod
     def _first_eigenvector(matrix):
@@ -331,12 +350,9 @@ class Quaternion(object):
         dec stands for declination, and usually lies in [-90, 90]
         roll stands for rotation/rolling, and usually lies in [0, 360]
         '''
-        raq = Quaternion.exp(Quaternion(0, 0, 0, -np.deg2rad(ra) / 2,
-                                        validate_numeric_stability=False))
-        decq = Quaternion.exp(Quaternion(0, 0, -np.deg2rad(dec) / 2, 0,
-                                         validate_numeric_stability=False))
-        rollq = Quaternion.exp(Quaternion(0, -np.deg2rad(roll) / 2, 0, 0,
-                                          validate_numeric_stability=False))
+        raq = Quaternion.exp([0, 0, 0, -np.deg2rad(ra) / 2])
+        decq = Quaternion.exp([0, 0, -np.deg2rad(dec) / 2, 0])
+        rollq = Quaternion.exp([0, -np.deg2rad(roll) / 2, 0, 0])
         return rollq * decq * raq
 
     @staticmethod
