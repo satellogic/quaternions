@@ -1,334 +1,202 @@
 import unittest
-from hypothesis import given, assume
-from hypothesis.strategies import floats
-import numpy as np
 
-from quaternions import Quaternion, QuaternionError
+from hypothesis import given, assume, strategies
+import numpy as np
+import pytest
+
+from quaternions import Quaternion, QuaternionError, GeneralQuaternion
+from quaternions.general_quaternion import DEFAULT_TOLERANCE
+
+
+ANY_QUATERNION = strategies.lists(elements=strategies.floats(min_value=-5, max_value=5), min_size=4, max_size=4)
+ANY_ROTATION_VECTOR = strategies.lists(elements=strategies.floats(min_value=-5, max_value=5), min_size=3, max_size=3)
 
 
 class QuaternionTest(unittest.TestCase):
-    # Schaub, Chapter 3
+
     schaub_example_dcm = np.array([[.892539, .157379, -.422618],
                                    [-.275451, .932257, -.23457],
                                    [.357073, .325773, .875426]])
+
     schaub_result = np.array([.961798, -.14565, .202665, .112505])
 
-    def test_matrix_respects_product(self):
-        q1 = Quaternion.exp([0, .1, .02, -.3])
-        q2 = Quaternion.exp([0, -.2, .21, .083])
-        np.testing.assert_allclose((q1 * q2).matrix, q1.matrix.dot(q2.matrix))
+    @given(ANY_QUATERNION)
+    def test_constructor(self, arr):
+        assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+        assert isinstance(q, Quaternion)
+        assert q.is_unitary()
 
-    def test_quaternion_rotates_vector(self):
+    def test_constructor_zero_raises(self):
+        with pytest.raises(QuaternionError):
+            Quaternion(0, 0, 0, 0)
+
+    @given(ANY_QUATERNION)
+    def test_is_equal(self, arr):
+        assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+        assert q == q
+        assert q == -q
+        assert q != q + Quaternion(1, 2, 3, 4)
+        assert q == GeneralQuaternion(*q.coordinates)
+
+    @given(ANY_QUATERNION)
+    def test_is_equal(self, arr):
+        assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+        assert q.distance(q) == pytest.approx(0)
+        assert q.distance(-q) == pytest.approx(0)
+
+    @given(ANY_QUATERNION)
+    def test_is_equal(self, arr):
+        assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+        assert q.positive_representant == q or q.positive_representant == -q
+        assert q.positive_representant == (-q).positive_representant
+
+    @given(ANY_QUATERNION)
+    def test_mul(self, arr):
+        assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+
+        # multiply by scalar:
+        assert isinstance(2 * q, Quaternion)
+        assert isinstance(q * 2, Quaternion)
+        assert q == q * 2 == 2 * q  # Note: up to scale; differs from GeneralQuaternion() * 2
+
+        # multiply by Quaternion:
+        other = Quaternion(1, 2, 3, 4)
+        assert isinstance(q * other, Quaternion)
+        assert (q * other).is_unitary()
+
+        # multiply by GeneralQuaternion:
+        other = GeneralQuaternion(1, 2, 3, 4)
+        for mul in [other * q, q * other]:
+            assert isinstance(mul, GeneralQuaternion) and not isinstance(mul, Quaternion)
+            assert mul.norm() == pytest.approx(other.norm())
+
+    @given(ANY_QUATERNION)
+    def test_rotation_vector(self, arr):
+        assume(np.linalg.norm(np.asarray(arr[1:])) > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+
+        complex_part = np.array([q.qi, q.qj, q.qk])
+        complex_norm = np.linalg.norm(complex_part)
+
+        # test alternative, direct way to calculate rotation axis:
+        np.testing.assert_allclose(complex_part / complex_norm, q.rotation_axis())
+
+        # test alternative, direct way to calculate rotation angle:
+        angle = 2 * np.math.atan2(complex_norm, q.qr)
+        assert angle == pytest.approx(q.rotation_angle())
+
+        # test rotation of q^2 is 2*rotation:
+        assert q*q == Quaternion.from_rotation_vector(2 * np.asarray(q.rotation_vector))
+
+    @given(ANY_QUATERNION)
+    def test_from_rotation_vector(self, arr):
+        assume(np.linalg.norm(np.asarray(arr[1:])) > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+        assert q.from_rotation_vector(q.rotation_vector) == q
+
+    def test_rotate_vector_schaub(self):
         q1 = Quaternion.exp([0, .1, .02, -.3])
         vector = QuaternionTest.schaub_example_dcm[:, 1]
         rotated_vector = q1 * vector
         np.testing.assert_allclose(rotated_vector, q1.matrix.dot(vector), atol=1e-5, rtol=0)
 
-    def test_from_matrix(self):
+    def test_from_matrix_schaub(self):
         q = Quaternion.from_matrix(QuaternionTest.schaub_example_dcm)
         np.testing.assert_allclose(QuaternionTest.schaub_result, q.coordinates, atol=1e-5, rtol=0)
 
-    def test_from_matrix_twisted(self):
-        q = Quaternion.from_matrix(QuaternionTest.schaub_example_dcm * [-1, -1, 1])
-        e1 = Quaternion(*QuaternionTest.schaub_result)
-        expected = e1 * Quaternion(0, 0, 0, 1)
-        np.testing.assert_allclose(expected.coordinates, q.coordinates, atol=1e-5, rtol=0)
-
-    def test_from_rotation_vector_to_matrix(self):
-        phi = np.array([-.295067, .410571, .227921])
-        expected = np.array([
-            [.892539, .157379, -.422618],
-            [-.275451, .932257, -.23457],
-            [.357073, .325773, .875426]])
-        q = Quaternion.from_rotation_vector(phi)
-        np.testing.assert_allclose(expected, q.matrix, atol=1e-5, rtol=0)
-
-    def test_qmethod(self):
-        frame_1 = np.array([[2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]])
-        frame_2 = np.array([[0.8, 0.6, 0], [-0.6, 0.8, 0]])
-        q = Quaternion.from_qmethod(frame_1.T, frame_2.T, np.ones(2))
-
-        for a1 in np.arange(0, 1, .1):
-            for a2 in np.arange(0, 1, .1):
-                v1 = a1 * frame_1[0] + a2 * frame_1[1]
-                v2 = a1 * frame_2[0] + a2 * frame_2[1]
-                np.testing.assert_allclose(q.matrix.dot(v1), v2, atol=1e-10)
-
-    def test_qmethod_with_probability(self):
-        frame_1 = np.array([[2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]])
-        frame_2 = np.array([[0.8, 0.6, 0], [-0.6, 0.8, 0]])
-        q = Quaternion.from_qmethod(frame_1.T, frame_2.T, np.ones(2))
-
-        for a1 in np.arange(0, 1, .1):
-            for a2 in np.arange(0, 1, .1):
-                v1 = a1 * frame_1[0] + a2 * frame_1[1]
-                v2 = a1 * frame_2[0] + a2 * frame_2[1]
-                np.testing.assert_allclose(q.matrix.dot(v1), v2, atol=1e-10)
-
-    def test_ra_dec_roll(self):
-        for ra in np.linspace(-170, 180, 8):
-            for dec in np.linspace(-90, 90, 8):
-                for roll in np.linspace(10, 360, 8):
-
-                    xyz = np.deg2rad(np.array([ra, dec, roll]))
-                    c3, c2, c1 = np.cos(xyz)
-                    s3, s2, s1 = np.sin(xyz)
-                    expected = np.array([
-                        [c2 * c3,               -c2 * s3,                 s2],       # noqa
-                        [c1 * s3 + c3 * s1 * s2, c1 * c3 - s1 * s2 * s3, -c2 * s1],  # noqa
-                        [s1 * s3 - c1 * c3 * s2, c3 * s1 + c1 * s2 * s3,  c1 * c2]   # noqa
-                    ])
-
-                    obtained = Quaternion.from_ra_dec_roll(ra, dec, roll)
-
-                    np.testing.assert_allclose(expected, obtained.matrix, atol=1e-15)
-
-    def test_to_rdr(self):
-        for ra in np.linspace(-170, 170, 8):
-            for dec in np.linspace(-88, 88, 8):
-                for roll in np.linspace(-170, 170, 8):
-                    q = Quaternion.from_ra_dec_roll(ra, dec, roll)
-
-                    np.testing.assert_allclose([ra, dec, roll], q.ra_dec_roll)
-
-    def test_average_easy(self):
-        q1 = Quaternion(1, 0, 0, 0)
-        q2 = Quaternion(-1, 0, 0, 0)
-        avg = Quaternion.average(q1, q2)
-
-        np.testing.assert_allclose(q1.coordinates, avg.coordinates)
-
-    def test_average_mild(self):
-        q1 = Quaternion.exp([0, .1, .3, .7])
-        quats_l = []
-        quats_r = []
-        for i in np.arange(-.1, .11, .05):
-            for j in np.arange(-.1, .11, .05):
-                for k in np.arange(-.1, .11, .05):
-                    try:
-                        q = Quaternion(0, i, j, k)
-                    except QuaternionError:  # wrong quaternion
-                        continue
-                    q = Quaternion.exp(q)
-                    quats_l.append(q1 * q)
-                    quats_r.append(q * q1)
-
-        avg_l = Quaternion.average(*quats_l)
-        avg_r = Quaternion.average(*quats_r)
-        np.testing.assert_allclose(q1.coordinates, avg_l.coordinates)
-        np.testing.assert_allclose(q1.coordinates, avg_r.coordinates)
-
-    def test_average_weights_easy(self):
-        q1 = Quaternion(1, 0, 0, 0)
-        q2 = Quaternion(-1, 0, 0, 0)
-        weights = [1, 1]
-        avg = Quaternion.average(q1, q2, weights=weights)
-        np.testing.assert_allclose(q1.coordinates, avg.coordinates)
-
-    def test_average_weights_easy_2(self):
-        q1 = Quaternion(1, 0, 0, 0)
-        q2 = Quaternion(0.707, 0, 0.707, 0)
-        weights = [1, 0]
-        avg = Quaternion.average(q1, q2, weights=weights)
-        np.testing.assert_allclose(q1.coordinates, avg.coordinates)
-
-    def test_average_weights_mild(self):
-        q1 = Quaternion.exp([0, .1, .3, .7])
-        quats_l = []
-        quats_r = []
-        weights = []
-        for i in np.arange(-.1, .11, .05):
-            for j in np.arange(-.1, .11, .05):
-                for k in np.arange(-.1, .11, .05):
-                    try:
-                        q = Quaternion(0, i, j, k)
-                    except QuaternionError:  # wrong quaternion
-                        continue
-                    q = Quaternion.exp(q)
-                    quats_l.append(q1 * q)
-                    quats_r.append(q * q1)
-                    weights.append(1)
-
-        avg_l = Quaternion.average(*quats_l, weights=weights)
-        avg_r = Quaternion.average(*quats_r, weights=weights)
-        np.testing.assert_allclose(q1.coordinates, avg_l.coordinates)
-        np.testing.assert_allclose(q1.coordinates, avg_r.coordinates)
-
-    def test_optical_axis_first(self):
-        v1 = np.array([.02, .01, .99])
-        v2 = np.array([-.01, .02, .99])
-        oaf = Quaternion.OpticalAxisFirst()
-        np.testing.assert_allclose([.99, -.02, -.01], oaf.matrix.dot(v1))
-        np.testing.assert_allclose([.99, .01, -.02], oaf.matrix.dot(v2))
-
-    def test_distance(self):
-        q = Quaternion.from_rotation_vector([.1, .2, .3])
-
-        for rot_x in np.linspace(-np.pi, np.pi, 7):
-            for rot_y in np.linspace(-np.pi / 2, np.pi / 2, 3):
-                for rot_z in np.linspace(-np.pi / 2, np.pi / 2, 2):
-
-                    rotation = [rot_x, rot_y, rot_z]
-                    rot_quat = Quaternion.from_rotation_vector(rotation)
-                    q_rot = q * rot_quat
-
-                    expected = np.linalg.norm(rotation) % (2 * np.pi)
-                    if expected > np.pi:
-                        expected = 2 * np.pi - expected
-
-                    self.assertAlmostEqual(expected, q.distance(q_rot))
-
-
-class ParameterizedTests(unittest.TestCase):
-
-    @staticmethod
-    def ra_dec_to_xyz(ra, dec):
-        cr, sr = np.cos(np.radians(ra)), np.sin(np.radians(ra))
-        cd, sd = np.cos(np.radians(dec)), np.sin(np.radians(dec))
-        return np.array([cr * cd, sr * cd, sd])
-
-    @staticmethod
-    def angle_to_xy(angle):
-        return np.cos(np.radians(angle)), np.sin(np.radians(angle))
-
-    @staticmethod
-    def from_mrp(xyz):
-        N = xyz.dot(xyz)
-
-        def inv_proj(x):
-            return 4 * x / (4 + N)
-
-        qi, qj, qk = map(inv_proj, xyz)
-        qr = (4 - N) / (4 + N)
-        return Quaternion(qr, qi, qj, qk)
-
-    @given(floats(min_value=-180, max_value=180),
-           floats(min_value=-89, max_value=89),  # avoid singularities in -90 & 90 degs
-           floats(min_value=0, max_value=360))
-    def test_quat_ra_dec_roll(self, ra, dec, roll):
-        q = Quaternion.from_ra_dec_roll(ra, dec, roll)
-        ob_ra, ob_dec, ob_roll = q.ra_dec_roll
-        np.testing.assert_almost_equal(self.ra_dec_to_xyz(ob_ra, ob_dec),
-                                       self.ra_dec_to_xyz(ra, dec))
-        np.testing.assert_almost_equal(self.angle_to_xy(ob_roll),
-                                       self.angle_to_xy(roll), decimal=2)
-
-    @given(floats(min_value=-2, max_value=2),
-           floats(min_value=-2, max_value=2),
-           floats(min_value=-2, max_value=2))
-    def test_quat_rotation_vector(self, rx, ry, rz):
-        # ignore numerically unstable quaternions:
-        assume(np.linalg.norm([rx, ry, rz]) > Quaternion.tolerance)
-        rot = np.array([rx, ry, rz])
-        q = Quaternion.from_rotation_vector(rot)
-        distance = np.linalg.norm(rot - q.rotation_vector)
-
-        assert (distance % 2 * np.pi) < 1e-8
-
-    @given(floats(min_value=-1, max_value=1),
-           floats(min_value=-1, max_value=1),
-           floats(min_value=-1, max_value=1))
-    def test_matrix(self, ma, mb, mc):
-        q = self.from_mrp(np.array([ma, mb, mc]))
-        self.assertTrue(q.is_unitary())
-
+    @given(ANY_QUATERNION)
+    def test_matrix(self, arr):
+        assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
         m = q.matrix
         np.testing.assert_almost_equal(np.identity(3), m.dot(m.T))
 
-        obtained = Quaternion.from_matrix(m)
-        self.assertTrue(obtained.is_unitary())
+    @given(ANY_QUATERNION)
+    def test_from_matrix(self, arr):
+        assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+        assert q.from_matrix(q.matrix) == q
 
-        np.testing.assert_almost_equal(q.positive_representant.coordinates,
-                                       obtained.positive_representant.coordinates,
-                                       decimal=8)
+    @given(ANY_QUATERNION)
+    def test_basis(self, arr):
+        assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+        assert np.array_equal([*q.basis], q.matrix)
 
-    @given(floats(min_value=-1, max_value=1),
-           floats(min_value=-1, max_value=1),
-           floats(min_value=-1, max_value=1))
-    def test_log_exp(self, qi, qj, qk):
-        # ignore numerically unstable quaternions:
-        assume(np.linalg.norm([qi, qj, qk]) > Quaternion.tolerance)
-        q = Quaternion(0, qi, qj, qk)
-        expq = Quaternion.exp(q)
-        qback = expq.log()
+    @given(ANY_ROTATION_VECTOR)
+    def test_from_ra_dec_roll(self, arr):
+        xyz = np.deg2rad(arr)
+        c3, c2, c1 = np.cos(xyz)
+        s3, s2, s1 = np.sin(xyz)
+        expected = (np.array([
+            [c2 * c3,               -c2 * s3,                 s2],       # noqa
+            [c1 * s3 + c3 * s1 * s2, c1 * c3 - s1 * s2 * s3, -c2 * s1],  # noqa
+            [s1 * s3 - c1 * c3 * s2, c3 * s1 + c1 * s2 * s3,  c1 * c2]   # noqa
+        ]))
 
-        np.testing.assert_almost_equal(q.coordinates,
-                                       qback,
-                                       decimal=8)
+        assert Quaternion.from_ra_dec_roll(*arr) == Quaternion.from_matrix(expected)
 
-    @given(floats(min_value=-5, max_value=5),
-           floats(min_value=-5, max_value=5),
-           floats(min_value=-5, max_value=5),
-           floats(min_value=-5, max_value=5))
-    def test_exp_log(self, qr, qi, qj, qk):
-        # ignore numerically unstable quaternions:
-        assume(np.linalg.norm([qr, qi, qj, qk]) > Quaternion.tolerance)
-        q = Quaternion(qr, qi, qj, qk)
-        if q.norm() == 0:
-            return
+    @given(ANY_QUATERNION)
+    def test_ra_dec_roll(self, arr):
+        assume(np.linalg.norm(arr) > DEFAULT_TOLERANCE)
+        q = Quaternion(*arr)
+        assert Quaternion.from_ra_dec_roll(*q.ra_dec_roll) == q
 
-        logq = q.log()
-        qback = Quaternion.exp(logq)
+    def test_qmethod(self):
+        v1, v2 = [2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]
+        w1, w2 = [0.8, 0.6, 0], [-0.6, 0.8, 0]
+        q = Quaternion.from_qmethod(np.array([v1, v2]).T, np.array([w1, w2]).T, np.ones(2))
 
-        np.testing.assert_almost_equal(q.coordinates,
-                                       qback.coordinates,
-                                       decimal=8)
+        np.testing.assert_allclose(q(v1), w1, atol=1e-10)
+        np.testing.assert_allclose(q(v2), w2, atol=1e-10)
 
-    def test_exp_identity(self):
-        assert Quaternion.Unit() == Quaternion.exp([0, 0, 0, 0])
-
-    def test_log_identity(self):
-        np.testing.assert_almost_equal(Quaternion.Unit().log(), [0, 0, 0, 0])
-
-    @given(floats(min_value=-2, max_value=2),
-           floats(min_value=-2, max_value=2),
-           floats(min_value=-2, max_value=2))
-    def test_from_qmethod(self, rx, ry, rz):
-        # ignore numerically unstable quaternions:
-        assume(np.linalg.norm([rx, ry, rz]) > Quaternion.tolerance)
-        q = Quaternion.from_rotation_vector(np.array([rx, ry, rz]))
+    @given(ANY_ROTATION_VECTOR)
+    def test_from_qmethod_with_noise(self, r):
+        assume(np.linalg.norm(r) > Quaternion.tolerance)
+        q = Quaternion.from_rotation_vector(r)
 
         vectors = np.random.normal(scale=1.0, size=(3, 6))
         norms = np.linalg.norm(vectors, axis=0)
         vectors /= norms
 
-        errors = np.random.normal(scale=1e-6, size=(3, 6))
+        noise_sigma = 1e-6
+        errors = np.random.normal(scale=noise_sigma, size=(3, 6))
         rotated_vectors = q.matrix.dot(vectors) + errors
 
-        qback = Quaternion.from_qmethod(vectors, rotated_vectors, np.ones(6))
-        q_diff = (q / qback).positive_representant
+        q_calculated = Quaternion.from_qmethod(vectors, rotated_vectors, np.ones(6))
+        assert q.is_equal(q_calculated, tolerance=10*noise_sigma)
 
-        np.testing.assert_almost_equal(q_diff.coordinates,
-                                       Quaternion.Unit().coordinates,
-                                       decimal=4)
+    @given(ANY_ROTATION_VECTOR)
+    def test_optical_axis_first(self, v):
+        oaf = Quaternion.OpticalAxisFirst()
+        np.testing.assert_allclose(oaf(v), [v[2], -v[0], -v[1]])
 
-    @given(floats(min_value=-5, max_value=5),
-           floats(min_value=-5, max_value=5),
-           floats(min_value=-5, max_value=5),
-           floats(min_value=-5, max_value=5))
-    def test_eq(self, qr, qi, qj, qk):
-        # ignore numerically unstable quaternions:
-        assume(np.linalg.norm([qr, qi, qj, qk]) > Quaternion.tolerance)
-        q = Quaternion(qr, qi, qj, qk)
+    def test_type(self):
+        assert isinstance(GeneralQuaternion.unit(), GeneralQuaternion)
+        assert isinstance(Quaternion.unit(), Quaternion)
+        assert isinstance(GeneralQuaternion.exp([1, 2, 3, 4]), GeneralQuaternion)
+        assert isinstance(Quaternion.exp([1, 2, 3, 4]), Quaternion)
 
-        small = Quaternion(1, .5 * Quaternion.tolerance, 0, 0)
-        not_small = Quaternion(1, 2 * Quaternion.tolerance, 0, 0)
+    def test_exp_identity(self):
+        assert Quaternion.exp(GeneralQuaternion.zero()) == Quaternion.unit()
 
-        assert q == q
-        assert q * small == q
-        assert q * not_small != q
+    def test_log_identity(self):
+        assert Quaternion.log(Quaternion.unit()) == GeneralQuaternion.zero()
 
-        np.testing.assert_almost_equal(q.distance(q), 0)
+    @given(ANY_QUATERNION)
+    def test_exp_2ways(self, arr):
+        assume(np.linalg.norm(arr) > Quaternion.tolerance)
+        q = GeneralQuaternion(*arr).normalized()
+        assert GeneralQuaternion.exp(q) == GeneralQuaternion.exp(q.coordinates)
 
-    @given(floats(min_value=-5, max_value=5),
-           floats(min_value=-5, max_value=5),
-           floats(min_value=-5, max_value=5),
-           floats(min_value=-5, max_value=5))
-    def test_invert(self, qr, qi, qj, qk):
-        """ verify all inverse methods are identical, and indeed they invert. """
-        # ignore numerically unstable quaternions:
-        assume(np.linalg.norm([qr, qi, qj, qk]) > Quaternion.tolerance)
-
-        q = Quaternion(qr, qi, qj, qk)
-        assert ~q == q.inverse() == q.conjugate()
-        assert q * ~q == ~q * q == Quaternion.Unit()
+    @given(ANY_QUATERNION)
+    def test_exp_log(self, arr):
+        assume(np.linalg.norm(arr) > DEFAULT_TOLERANCE)
+        for q in [GeneralQuaternion(*arr).normalized(), Quaternion(*arr)]:  # both ways are supported
+            assert Quaternion.log(GeneralQuaternion.exp(q)) == q
+            assert GeneralQuaternion.exp(Quaternion.log(q)) == q

@@ -1,195 +1,85 @@
 import functools
 import numpy as np
 from collections import Iterable
+import numbers
+
+from quaternions.general_quaternion import GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, is_quaternion
 
 
-class QuaternionError(Exception):
-    pass
-
-
-class Quaternion(object):
-    ''' A class that holds quaternions. It actually holds Q^op, as
+class Quaternion(GeneralQuaternion):
+    ''' A class that holds unit quaternions (norm==1, aka versors). It actually holds Q^op, as
     this is the way Schaub-Jenkins work with them.
-    Note: Quaternion is equal up to scale, but it's not stored normalized.
+    Note: Quaternion is equal up to sign.
     '''
     tolerance = 1e-8
 
-    def __init__(self, qr, qi, qj, qk, validate_numeric_stability=True):
-        self.qr = qr
-        self.qi = qi
-        self.qj = qj
-        self.qk = qk
+    def __init__(self, qr, qi, qj, qk):
+        q = [qr, qi, qj, qk]
+        norm = np.linalg.norm(q)
+        if norm < DEFAULT_TOLERANCE:
+            raise QuaternionError('provided numerically unstable quaternion: %s' % q)
 
-        if validate_numeric_stability:
-            if self._squarenorm() < self.tolerance * self.tolerance:
-                raise QuaternionError('provided numerically unstable quaternion: %s' % self)
-
-    def __add__(self, p):
-        assert isinstance(p, Quaternion)
-        return Quaternion(self.qr + p.qr, self.qi + p.qi, self.qj + p.qj, self.qk + p.qk)
-
-    def __sub__(self, p):
-        assert isinstance(p, Quaternion)
-        return Quaternion(self.qr - p.qr, self.qi - p.qi, self.qj - p.qj, self.qk - p.qk)
-
-    def __neg__(self):
-        return Quaternion(-self.qr, -self.qi, -self.qj, -self.qk)
+        super().__init__(*q / norm)
 
     def __mul__(self, p):
-        if isinstance(p, Quaternion):
-            mat = np.array([
-                [self.qr, -self.qi, -self.qj, -self.qk],  # noqa
-                [self.qi,  self.qr,  self.qk, -self.qj],  # noqa
-                [self.qj, -self.qk,  self.qr,  self.qi],  # noqa
-                [self.qk,  self.qj, -self.qi,  self.qr]   # noqa
-            ])
-            result = mat.dot(p.normalized().coordinates)
-            return Quaternion(*result)
-        elif isinstance(p, Iterable):
+        if isinstance(p, Quaternion) or isinstance(p, numbers.Number):
+            mul = GeneralQuaternion(*self.coordinates) * p
+            return Quaternion(*mul.coordinates)
+        elif isinstance(p, GeneralQuaternion):
+            return GeneralQuaternion(*self.coordinates) * p
+        elif isinstance(p, Iterable) and len(p) == 3:  # applies quaternion rotation on vector
             return self.matrix.dot(p)
         else:
-            return Quaternion(self.qr * p, self.qi * p, self.qj * p, self.qk * p)
+            raise QuaternionError('cant multiply by %s' % type(p))
 
-    def __rmul__(self, p):
-        return self.__mul__(p)
+    def __call__(self, p):
+        return self * p
 
-    def __truediv__(self, p):
-        return self * (1 / p)
-
-    def __rtruediv__(self, p):
-        return p * self.inverse()
-
-    def conjugate(self):
-        return Quaternion(self.qr, -self.qi, -self.qj, -self.qk)
-
-    def inverse(self):
-        return self.conjugate() * (1 / self._squarenorm())
-
-    def __invert__(self):
-        return self.inverse()
-
-    def normalized(self):
-        return self / np.sqrt(self._squarenorm())
-
-    def _squarenorm(self):
-        return self.qr * self.qr + self.qi * self.qi + self.qj * self.qj + self.qk * self.qk
-
-    def __repr__(self):
-        return 'Quaternion{}'.format(self.coordinates)
-
-    def __str__(self):
-        return '({qr:.6g}{qi:+.6g}i{qj:+.6g}j{qk:+.6g}k)'.format(**self.__dict__)
-
-    def is_equal(self, other):
-        """
-        compares as quaternions up to tolerance.
-        Note: tolerance in coords, not in quaternions metrics.
-        """
-        q1 = self.normalized().coordinates
-        q2 = other.normalized().coordinates
-        dist = min(np.linalg.norm(q1 - q2), np.linalg.norm(q1 - (-q2)))
-        return dist < self.tolerance
+    def is_equal(self, other, tolerance=DEFAULT_TOLERANCE):
+        """ compares as quaternions, i.e. up to sign. """
+        return super().is_equal(other, tolerance) or super().is_equal(-other, tolerance)
 
     def __eq__(self, other):
         return self.is_equal(other)
 
-    def norm(self):
-        return np.sqrt(self._squarenorm())
-
-    @classmethod
-    def exp(cls, arr):
-        """
-        exponent quaternion
-        :param arr: list of 4 items or Quaternion
-        :return: Quaternion
-        """
-        if isinstance(arr, Quaternion):
-            real, imag = arr.coordinates[0], arr.coordinates[1:]
-        else:
-            real, imag = arr[0], np.asarray(arr[1:])
-
-        exp_norm = np.exp(real)
-
-        imag_norm = np.linalg.norm(imag)
-        if imag_norm == 0:
-            return Quaternion(exp_norm, 0, 0, 0)
-
-        j, k, l = np.sin(imag_norm) * imag / imag_norm
-        q = Quaternion(np.cos(imag_norm), j, k, l)
-
-        return exp_norm * q
-
     def log(self):
         """
         logarithm of quaternion
-        :return: np.array with 4 items
+        :return: GeneralQuaternion
         """
         norm = self.norm()
         imag = np.array((self.qi, self.qj, self.qk)) / norm
         imag_norm = np.linalg.norm(imag)
         if imag_norm == 0:
             i_part = 0 if self.qr > 0 else np.pi
-            return np.array([np.log(norm), i_part, 0, 0])
+            return GeneralQuaternion(np.log(norm), i_part, 0, 0)
 
         j, k, l = imag / imag_norm * np.arctan2(imag_norm, self.qr / norm)
-        return np.array([np.log(norm), j, k, l])
+        return GeneralQuaternion(np.log(norm), j, k, l)
 
     def distance(self, other):
-        '''Returns the distance in radians between two unitary quaternions'''
-        quot = (self * other.conjugate()).normalized().positive_representant
-        return np.linalg.norm(np.multiply(2, quot.log()))
-
-    def is_unitary(self):
-        return abs(self._squarenorm() - 1) < self.tolerance
-
-    @property
-    def coordinates(self):
-        """
-        :return: np.array of length 4
-        """
-        return np.array([self.qr, self.qi, self.qj, self.qk])
+        """ Returns the distance in radians between two unitary quaternions. """
+        return min(super().distance(other), super().distance(-other))
 
     @property
     def positive_representant(self):
-        '''Unitary quaternions q and -q correspond to the same element in SO(3).
+        """
+        Unitary quaternions q and -q correspond to the same element in SO(3).
         In order to perform some computations (v.g., distance), it is important
         to fix one of them.
 
         Though the following computations can be done for any quaternion, we allow them
         only for unitary ones.
-        '''
-
-        assert self.is_unitary(), 'This method makes sense for unitary quaternions'
-
+        """
         for coord in self.coordinates:
             if coord > 0:
                 return self
             if coord < 0:
                 return -self
-        # add a return here if you remove the assert
-
-    @property
-    def basis(self):
-        qr, qi, qj, qk = self.coordinates
-        b0 = np.array([
-            qr ** 2 + qi ** 2 - qj ** 2 - qk ** 2,
-            2 * qr * qk + 2 * qi * qj,
-            -2 * qr * qj + 2 * qi * qk
-        ])
-        b1 = np.array([
-            -2 * qr * qk + 2 * qi * qj,
-            qr ** 2 - qi ** 2 + qj ** 2 - qk ** 2,
-            2 * qr * qi + 2 * qj * qk
-        ])
-        b2 = np.array([
-            2 * qr * qj + 2 * qi * qk,
-            -2 * qr * qi + 2 * qj * qk,
-            qr ** 2 - qi ** 2 - qj ** 2 + qk ** 2
-        ])
-        return b0, b1, b2
 
     @property
     def matrix(self):
+        """ returns 3x3 rotation matrix representing the same rotation. """
         qr, qi, qj, qk = self.coordinates
         return np.array([
             [qr * qr + qi * qi - qj * qj - qk * qk,
@@ -204,12 +94,27 @@ class Quaternion(object):
         ])
 
     @property
+    def basis(self):
+        m = self.matrix
+        return m[0, :], m[1, :], m[2, :]
+
+    @property
     def rotation_vector(self):
-        return (2 * self.log())[1:]
+        """ returns [x, y, z]: direction is rotation axis, norm is angle [rad]  """
+        return (2 * self.log()).coordinates[1:]
+
+    def rotation_axis(self):
+        """ returns unit rotation axis: [x, y, z] """
+        v = self.rotation_vector
+        return v / np.linalg.norm(v)
+
+    def rotation_angle(self):
+        """ returns rotation angle [rad] """
+        return np.linalg.norm(self.rotation_vector)
 
     @property
     def ra_dec_roll(self):
-        '''Returns ra, dec, roll for quaternion.
+        '''Returns ra, dec, roll for quaternion [deg].
         The Euler angles are those called Tait-Bryan XYZ, as defined in
         https://en.wikipedia.org/wiki/Euler_angles#Tait-Bryan_angles
         '''
@@ -221,7 +126,7 @@ class Quaternion(object):
 
     @property
     def astrometry_ra_dec_roll(self):
-        '''Returns ra, dec, roll as reported by astrometry.
+        '''Returns ra, dec, roll as reported by astrometry [deg].
         Notice that Tetra gives a different roll angle, so this is not
         a fixed standard.
         '''
@@ -231,9 +136,7 @@ class Quaternion(object):
 
     @staticmethod
     def from_matrix(mat):
-        '''
-        Returns the quaternion corresponding to the unitary matrix mat
-        '''
+        """ Returns the quaternion corresponding to the unitary matrix mat. """
         mat = np.array(mat)
         tr = np.trace(mat)
         d = 1 + 2 * mat.diagonal() - tr
@@ -263,16 +166,6 @@ class Quaternion(object):
         '''
         a, b, c = .5 * np.array(xyz)
         return Quaternion.exp([0, a, b, c ])
-
-    @staticmethod
-    def _first_eigenvector(matrix):
-        '''matrix must be a 4x4 symmetric matrix'''
-        vals, vecs = np.linalg.eigh(matrix)
-        # q is the eigenvec with heighest eigenvalue (already normalized)
-        q = vecs[:, -1]
-        if q[0] < 0:
-            q = -q
-        return Quaternion(*q)
 
     @staticmethod
     def from_qmethod(source, target, probabilities=None):
@@ -312,25 +205,6 @@ class Quaternion(object):
         return Quaternion._first_eigenvector(K)
 
     @staticmethod
-    def average(*quaternions, weights=None):
-        '''
-        Return the quaternion such that its matrix minimizes the square distance
-        to the matrices of the quaternions in the argument list.
-
-        See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
-        '''
-        B = np.array([q.coordinates for q in quaternions])
-        if not weights:
-            weights = np.ones(len(quaternions))
-        M = B.T.dot(np.diag(weights)).dot(B)
-
-        return Quaternion._first_eigenvector(M)
-
-    @staticmethod
-    def Unit():
-        return Quaternion(1, 0, 0, 0)
-
-    @staticmethod
     def integrate_from_velocity_vectors(vectors):
         '''vectors must be an iterable of 3-d vectors.
         This method just exponentiates all vectors/2, multiplies them and takes 2*log.
@@ -338,7 +212,7 @@ class Quaternion(object):
         under all rotations in the iterable.
         '''
         qs = list(map(Quaternion.from_rotation_vector, vectors))[::-1]
-        prod = functools.reduce(Quaternion.__mul__, qs, Quaternion.Unit())
+        prod = functools.reduce(Quaternion.__mul__, qs, Quaternion.unit())
         return prod.rotation_vector
 
     @staticmethod
