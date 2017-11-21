@@ -126,7 +126,8 @@ class QuaternionTest(unittest.TestCase):
     def test_basis(self, arr):
         assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
         q = Quaternion(*arr)
-        assert np.array_equal([*q.basis], q.matrix)
+        b1, b2, b3 = q.basis
+        assert np.array_equal([b1, b2, b3], q.matrix)
 
     @given(ANY_ROTATION_VECTOR)
     def test_from_ra_dec_roll(self, arr):
@@ -143,9 +144,11 @@ class QuaternionTest(unittest.TestCase):
 
     @given(ANY_QUATERNION)
     def test_ra_dec_roll(self, arr):
-        assume(np.linalg.norm(arr) > DEFAULT_TOLERANCE)
+        assume(np.linalg.norm(arr) > 3 * DEFAULT_TOLERANCE)
         q = Quaternion(*arr)
-        assert Quaternion.from_ra_dec_roll(*q.ra_dec_roll) == q
+        ra, dec, roll = q.ra_dec_roll
+        assume(abs(abs(dec) - 90) > 1e-3)  # avoid singularity at dec==+_90
+        assert Quaternion.from_ra_dec_roll(ra, dec, roll) == q
 
     def test_qmethod(self):
         v1, v2 = [2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]
