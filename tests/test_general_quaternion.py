@@ -75,6 +75,14 @@ class GeneralQuaternionTest(unittest.TestCase):
         q = GeneralQuaternion(*arr)
         assert q == GeneralQuaternion(*q.coordinates)
 
+    @given(ANY_QUATERNION)
+    def test_print(self, arr):
+        """ make sure all coordinates are printed. """
+        q = GeneralQuaternion(*arr)
+        for elem in q.coordinates:
+            expected_string = '{elem:.6g}'.format(**{'elem': elem})
+            assert expected_string in str(q)
+
     NUM_ELEMENTS = 25
 
     @given(strategies.lists(elements=strategies.floats(min_value=-5, max_value=5),
