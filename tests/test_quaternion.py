@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from quaternions import Quaternion, QuaternionError, GeneralQuaternion
-from quaternions.general_quaternion import DEFAULT_TOLERANCE
+from quaternions.general_quaternion import DEFAULT_TOLERANCE, exp, log
 
 
 ANY_QUATERNION = strategies.lists(elements=strategies.floats(min_value=-5, max_value=5), min_size=4, max_size=4)
@@ -100,7 +100,7 @@ class QuaternionTest(unittest.TestCase):
         assert q.from_rotation_vector(q.rotation_vector) == q
 
     def test_rotate_vector_schaub(self):
-        q1 = Quaternion.exp([0, .1, .02, -.3])
+        q1 = exp(Quaternion(0, .1, .02, -.3))
         vector = QuaternionTest.schaub_example_dcm[:, 1]
         rotated_vector = q1 * vector
         np.testing.assert_allclose(rotated_vector, q1.matrix.dot(vector), atol=1e-5, rtol=0)
@@ -189,27 +189,24 @@ class QuaternionTest(unittest.TestCase):
         assert not isinstance(Quaternion.zero(), Quaternion)
         assert isinstance(Quaternion.zero(), GeneralQuaternion)
 
-        assert isinstance(GeneralQuaternion.exp([1, 2, 3, 4]), GeneralQuaternion)
-        assert isinstance(Quaternion.exp([1, 2, 3, 4]), Quaternion)
+        assert isinstance(exp(GeneralQuaternion(1, 2, 3, 4)), GeneralQuaternion)
+        assert isinstance(exp(Quaternion(1, 2, 3, 4)), Quaternion)
+
+        assert isinstance(log(Quaternion(1, 2, 3, 4)), GeneralQuaternion)
+        assert not isinstance(log(Quaternion(1, 2, 3, 4)), Quaternion)
 
     def test_exp_identity(self):
-        assert Quaternion.exp(GeneralQuaternion.zero()) == Quaternion.unit()
+        assert exp(GeneralQuaternion.zero()) == Quaternion.unit()
 
     def test_log_identity(self):
-        assert Quaternion.log(Quaternion.unit()) == GeneralQuaternion.zero()
-
-    @given(ANY_QUATERNION)
-    def test_exp_2ways(self, arr):
-        assume(np.linalg.norm(arr) > Quaternion.tolerance)
-        q = GeneralQuaternion(*arr).normalized()
-        assert GeneralQuaternion.exp(q) == GeneralQuaternion.exp(q.coordinates)
+        assert log(Quaternion.unit()) == GeneralQuaternion.zero()
 
     @given(ANY_QUATERNION)
     def test_exp_log(self, arr):
         assume(np.linalg.norm(arr) > DEFAULT_TOLERANCE)
-        for q in [GeneralQuaternion(*arr).normalized(), Quaternion(*arr)]:  # both ways are supported
-            assert Quaternion.log(GeneralQuaternion.exp(q)) == q
-            assert GeneralQuaternion.exp(Quaternion.log(q)) == q
+        q = GeneralQuaternion(*arr).normalized()
+        assert exp(log(q)) == q
+        assert log(exp(q)).imaginary == pytest.approx(q.imaginary)  # because log is defined up to real
 
     NUM_ELEMENTS = 25
 

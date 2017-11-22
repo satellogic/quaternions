@@ -20,21 +20,27 @@ class GeneralQuaternion(object):
         self.qj = qj
         self.qk = qk
 
+    @property
+    def real(self):
+        return self.qr
+
+    @property
+    def imaginary(self):
+        return np.array([self.qi, self.qj, self.qk])
+
     def __add__(self, p):
-        if not is_quaternion(p):
-            raise QuaternionError('expected quaternion, got %s' % p.__class__.__name__)
+        validate_is_quaternion(p)
         return GeneralQuaternion(self.qr + p.qr, self.qi + p.qi, self.qj + p.qj, self.qk + p.qk)
 
     def __sub__(self, p):
-        if not is_quaternion(p):
-            raise QuaternionError('expected quaternion, got %s' % p)
+        validate_is_quaternion(p)
         return GeneralQuaternion(self.qr - p.qr, self.qi - p.qi, self.qj - p.qj, self.qk - p.qk)
 
     def __neg__(self):
         return self.__class__(-self.qr, -self.qi, -self.qj, -self.qk)
 
     def __mul__(self, p):
-        if is_quaternion(p):
+        if isinstance(p, GeneralQuaternion):
             mat = np.array([
                 [self.qr, -self.qi, -self.qj, -self.qk],  # noqa
                 [self.qi,  self.qr,  self.qk, -self.qj],  # noqa
@@ -114,27 +120,51 @@ class GeneralQuaternion(object):
     def zero(cls):
         return GeneralQuaternion(0, 0, 0, 0)
 
-    @classmethod
-    def exp(cls, q):
-        """
-        exponent quaternion
-        :param q: list of 4 items or Quaternion (or any derived)
-        :return: Quaternion (or any derived)
-        """
-        if is_quaternion(q):
-            real, imag = q.coordinates[0], q.coordinates[1:]
-        else:
-            real, imag = q[0], np.asarray(q[1:])
+    def exp(self):
+        return exp(self)
 
-        exp_norm = np.exp(real)
-
-        imag_norm = np.linalg.norm(imag)
-        if imag_norm == 0:
-            return cls(exp_norm, 0, 0, 0)
-
-        j, k, l = np.sin(imag_norm) * imag / imag_norm
-        return exp_norm * cls(np.cos(imag_norm), j, k, l)
+    def log(self):
+        return log(self)
 
 
-def is_quaternion(q):
-    return issubclass(type(q), GeneralQuaternion)
+def validate_is_quaternion(q):
+    if not isinstance(q, GeneralQuaternion):
+        raise QuaternionError('expected quaternion, got %s' % q.__class__.__name__)
+
+
+def exp(q):
+    """
+    exponent quaternion
+    :param q: GeneralQuaternion (or any derived)
+    :return: same class as q (GeneralQuaternion or any derived)
+    """
+    validate_is_quaternion(q)
+    cls = type(q)
+
+    exp_norm = np.exp(q.real)
+
+    imag_norm = np.linalg.norm(q.imaginary)
+    if imag_norm == 0:
+        i, j, k = 0, 0, 0
+    else:
+        i, j, k = np.sin(imag_norm) * q.imaginary / imag_norm
+    q_exp = GeneralQuaternion(*(exp_norm * np.array([np.cos(imag_norm), i, j, k])))
+    return cls(*q_exp.coordinates)  # to enable derived classes
+
+
+def log(q):
+    """
+    logarithm of quaternion
+    :param q: GeneralQuaternion (or any derived)
+    :return: GeneralQuaternion
+    """
+    validate_is_quaternion(q)
+
+    norm = q.norm()
+    imag = np.array((q.qi, q.qj, q.qk)) / norm
+    imag_norm = np.linalg.norm(imag)
+    if imag_norm == 0:
+        i, j, k = 0 if q.qr > 0 else np.pi, 0, 0
+    else:
+        i, j, k = imag / imag_norm * np.arctan2(imag_norm, q.qr / norm)
+    return GeneralQuaternion(np.log(norm), i, j, k)

@@ -3,7 +3,7 @@ import numpy as np
 from collections import Iterable
 import numbers
 
-from quaternions.general_quaternion import GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, is_quaternion
+from quaternions.general_quaternion import GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, exp
 
 
 class Quaternion(GeneralQuaternion):
@@ -41,21 +41,6 @@ class Quaternion(GeneralQuaternion):
 
     def __eq__(self, other):
         return self.is_equal(other)
-
-    def log(self):
-        """
-        logarithm of quaternion
-        :return: GeneralQuaternion
-        """
-        norm = self.norm()
-        imag = np.array((self.qi, self.qj, self.qk)) / norm
-        imag_norm = np.linalg.norm(imag)
-        if imag_norm == 0:
-            i_part = 0 if self.qr > 0 else np.pi
-            return GeneralQuaternion(np.log(norm), i_part, 0, 0)
-
-        j, k, l = imag / imag_norm * np.arctan2(imag_norm, self.qr / norm)
-        return GeneralQuaternion(np.log(norm), j, k, l)
 
     def distance(self, other):
         """ Returns the distance in radians between two unitary quaternions. """
@@ -181,20 +166,21 @@ class Quaternion(GeneralQuaternion):
 
     @staticmethod
     def from_rotation_vector(xyz):
-        '''
+        """
         Returns the quaternion corresponding to the rotation xyz.
         Explicitly: rotation occurs along the axis xyz and has angle
         norm(xyz)
 
         This corresponds to the exponential of the quaternion with
         real part 0 and imaginary part 1/2 * xyz.
-        '''
+        """
         a, b, c = .5 * np.array(xyz)
-        return Quaternion.exp([0, a, b, c ])
+        q_exp = exp(GeneralQuaternion(0, a, b, c))
+        return Quaternion(*q_exp.coordinates)
 
     @staticmethod
     def from_qmethod(source, target, probabilities=None):
-        '''
+        """
         Returns the quaternion corresponding to solving with qmethod.
 
         See: Closed-form solution of absolute orientation using unit quaternions,
@@ -214,7 +200,7 @@ class Quaternion(GeneralQuaternion):
         If s and t are the 3xn matrices of v1,..., vn in frames F1 and F2, then
         Quaternion.from_qmethod(s, t) is the quaternion corresponding to the change of basis
         from F1 to F2.
-        '''
+        """
         if probabilities is not None:
             B = source.dot(np.diag(probabilities)).dot(target.T)
         else:
@@ -249,10 +235,11 @@ class Quaternion(GeneralQuaternion):
         dec stands for declination, and usually lies in [-90, 90]
         roll stands for rotation/rolling, and usually lies in [0, 360]
         '''
-        raq = Quaternion.exp([0, 0, 0, -np.deg2rad(ra) / 2])
-        decq = Quaternion.exp([0, 0, -np.deg2rad(dec) / 2, 0])
-        rollq = Quaternion.exp([0, -np.deg2rad(roll) / 2, 0, 0])
-        return rollq * decq * raq
+        raq = exp(GeneralQuaternion(0, 0, 0, -np.deg2rad(ra) / 2))
+        decq = exp(GeneralQuaternion(0, 0, -np.deg2rad(dec) / 2, 0))
+        rollq = exp(GeneralQuaternion(0, -np.deg2rad(roll) / 2, 0, 0))
+        q = rollq * decq * raq
+        return Quaternion(*q.coordinates)
 
     @staticmethod
     def OpticalAxisFirst():

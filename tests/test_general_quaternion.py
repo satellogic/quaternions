@@ -1,9 +1,10 @@
 import unittest
 
+import numpy as np
 from hypothesis import given, assume, strategies
 import pytest
 
-from quaternions.general_quaternion import GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE
+from quaternions.general_quaternion import GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, exp, log
 
 
 ANY_QUATERNION = strategies.lists(elements=strategies.floats(min_value=-5, max_value=5), min_size=4, max_size=4)
@@ -17,6 +18,12 @@ class GeneralQuaternionTest(unittest.TestCase):
         assert q == q
         assert q == q + GeneralQuaternion(0.9 * DEFAULT_TOLERANCE, 0, 0, 0)
         assert q != q + GeneralQuaternion(1.1 * DEFAULT_TOLERANCE, 0, 0, 0)
+
+    @given(ANY_QUATERNION)
+    def test_real_imaginary(self, arr):
+        q = GeneralQuaternion(*arr)
+        i, j, k = q.imaginary
+        assert (q.coordinates == [q.real, i, j, k]).all()
 
     @given(ANY_QUATERNION)
     def test_raises(self, arr):
@@ -82,3 +89,21 @@ class GeneralQuaternionTest(unittest.TestCase):
         for elem in q.coordinates:
             expected_string = '{elem:.6g}'.format(**{'elem': elem})
             assert expected_string in str(q)
+
+    def test_exp_identity(self):
+        assert exp(GeneralQuaternion.zero()) == GeneralQuaternion.unit()
+
+    def test_log_identity(self):
+        assert log(GeneralQuaternion.unit()) == GeneralQuaternion.zero()
+
+    @given(ANY_QUATERNION)
+    def test_exp_norm(self, arr1):
+        q1 = GeneralQuaternion(*arr1)
+        assert exp(q1).norm() == pytest.approx(np.exp(q1.qr))  # |exp(q)| == exp(real(q)|
+
+    @given(ANY_QUATERNION)
+    def test_exp_log(self, arr):
+        assume(np.linalg.norm(arr) > DEFAULT_TOLERANCE)
+        q = GeneralQuaternion(*arr).normalized()
+        assert exp(log(q)) == q
+        assert log(exp(q)) == GeneralQuaternion(*q.coordinates)
