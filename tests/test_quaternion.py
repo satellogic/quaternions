@@ -211,7 +211,7 @@ class QuaternionTest(unittest.TestCase):
         assume(np.linalg.norm(arr) > DEFAULT_TOLERANCE)
         q = GeneralQuaternion(*arr).normalized()
         assert exp(log(q)) == q
-        assert log(exp(q)).imaginary == pytest.approx(q.imaginary)  # because log is defined up to real
+        assert (log(exp(q)).imaginary.tolist() == pytest.approx(q.imaginary.tolist()))  # log defined up to real
 
     NUM_ELEMENTS = 25
 
