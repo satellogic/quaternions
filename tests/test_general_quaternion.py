@@ -33,6 +33,13 @@ class GeneralQuaternionTest(unittest.TestCase):
         assert q * GeneralQuaternion.unit() == q * 1 == q
         assert -(-q) == q
 
+    @given(ANY_QUATERNION, ANY_QUATERNION)
+    def test_sum_commutative(self, arr1, arr2):
+        q1 = GeneralQuaternion(*arr1)
+        q2 = GeneralQuaternion(*arr2)
+        assert q1 + q2 == q2 + q1
+        assert q1 - q2 == - (q2 - q1)
+
     @given(ANY_QUATERNION)
     def test_conjugate(self, arr):
         q = GeneralQuaternion(*arr)
