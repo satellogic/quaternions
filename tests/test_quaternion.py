@@ -40,12 +40,17 @@ class QuaternionTest(unittest.TestCase):
         assert q != q + Quaternion(1, 2, 3, 4)
         assert q == GeneralQuaternion(*q.coordinates)
 
-    @given(ANY_QUATERNION)
-    def test_distance(self, arr):
+    @given(ANY_QUATERNION, strategies.floats(min_value=0, max_value=2 * np.math.pi-1e-4))
+    def test_distance(self, arr, angle_rad):
         assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
         q = Quaternion(*arr)
-        assert q.distance(q) == pytest.approx(0)
-        assert q.distance(-q) == pytest.approx(0)
+        assert q.distance(-q) == pytest.approx(0) or q.distance(-q) == pytest.approx(2 * np.math.pi)
+
+        for diff in [Quaternion.from_ra_dec_roll(np.degrees(angle_rad), 0, 0),
+                     Quaternion.from_ra_dec_roll(0, np.degrees(angle_rad), 0),
+                     Quaternion.from_ra_dec_roll(0, 0, np.degrees(angle_rad))]:
+            assert q.distance(q * diff) == pytest.approx(angle_rad)
+            assert q.distance(diff * q) == pytest.approx(angle_rad)
 
     @given(ANY_QUATERNION)
     def test_positive_representant(self, arr):

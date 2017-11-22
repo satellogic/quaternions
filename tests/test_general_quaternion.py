@@ -62,6 +62,7 @@ class GeneralQuaternionTest(unittest.TestCase):
     @given(ANY_QUATERNION)
     def test_distance(self, arr):
         q = GeneralQuaternion(*arr)
+        assert q.euclidean_distance(q) == pytest.approx(0)
         assert q.norm() == q.euclidean_distance(GeneralQuaternion.zero()) == q.euclidean_distance(2 * q)
 
     @given(ANY_QUATERNION)

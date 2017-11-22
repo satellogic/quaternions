@@ -51,8 +51,9 @@ class Quaternion(GeneralQuaternion):
         return self.is_equal(other)
 
     def distance(self, other):
-        """ Returns the distance in radians between two unitary quaternions. """
-        return min(super().euclidean_distance(other), super().euclidean_distance(-other))
+        """ Returns the distance [rad] between two unitary quaternions. """
+        diff = self * ~other
+        return diff.rotation_angle()
 
     @property
     def positive_representant(self):
@@ -127,8 +128,10 @@ class Quaternion(GeneralQuaternion):
         return v / np.linalg.norm(v)
 
     def rotation_angle(self):
-        """ returns rotation angle [rad] """
-        return np.linalg.norm(self.rotation_vector)
+        """ returns rotation angle [rad], in [0, 2 * pi) """
+        angle = np.linalg.norm(self.rotation_vector)
+        angle %= 2 * np.math.pi
+        return angle
 
     @property
     def ra_dec_roll(self):
