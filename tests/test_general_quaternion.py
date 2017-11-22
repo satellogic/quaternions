@@ -107,3 +107,14 @@ class GeneralQuaternionTest(unittest.TestCase):
         q = GeneralQuaternion(*arr).normalized()
         assert exp(log(q)) == q
         assert log(exp(q)) == GeneralQuaternion(*q.coordinates)
+
+    @given(ANY_QUATERNION)
+    def test_exp_identical_both_ways(self, arr):
+        q = GeneralQuaternion(*arr)
+        assert exp(q) == q.exp()
+
+    @given(ANY_QUATERNION)
+    def test_log_identical_both_ways(self, arr):
+        assume(np.linalg.norm(arr) > DEFAULT_TOLERANCE)
+        q = GeneralQuaternion(*arr)
+        assert log(q) == q.log()
