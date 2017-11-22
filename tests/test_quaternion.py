@@ -229,3 +229,18 @@ class QuaternionTest(unittest.TestCase):
         weights = [1] + (self.NUM_ELEMENTS-1) * [0]  # only uses q_with_noise[0]
         average = Quaternion.average(*q_with_noise, weights=weights)
         assert average == q_with_noise[0] or average == -q_with_noise[0]
+
+    def test_apply(self):
+        q = Quaternion(1, 2, 3, 4)
+
+        v = [1, 2, 3]
+        assert (q(v) == q * v).all()
+        assert isinstance(q(v), np.ndarray)
+        assert len(q(v)) == 3
+
+    def test_apply_wrong_type(self):
+        q = Quaternion(1, 2, 3, 4)
+        with pytest.raises(QuaternionError):
+            q([1, 2])
+        with pytest.raises(QuaternionError):
+            q({1, 2, 3})

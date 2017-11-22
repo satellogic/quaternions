@@ -33,7 +33,15 @@ class Quaternion(GeneralQuaternion):
             raise QuaternionError('cant multiply by %s' % type(p))
 
     def __call__(self, p):
-        return self * p
+        """
+        applies quaternion on vector
+        :param p: array of 3 elements
+        :return: ndarray of 3 elements
+        """
+        try:
+            return self * p
+        except Exception as e:
+            raise QuaternionError('expected list of 3 elements, got %s, caused error: %s' % (p.__class__.__name__, e))
 
     def is_equal(self, other, tolerance=DEFAULT_TOLERANCE):
         """ compares as quaternions, i.e. up to sign. """
