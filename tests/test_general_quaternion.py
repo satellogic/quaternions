@@ -38,6 +38,7 @@ class GeneralQuaternionTest(unittest.TestCase):
         assert q - q == GeneralQuaternion.zero()
         assert q * GeneralQuaternion.zero() == q * 0 == GeneralQuaternion.zero()
         assert q * GeneralQuaternion.unit() == q * 1 == q
+        assert GeneralQuaternion.unit() * q == 1 * q == q
         assert -(-q) == q
 
     @given(ANY_QUATERNION, ANY_QUATERNION)
@@ -51,6 +52,7 @@ class GeneralQuaternionTest(unittest.TestCase):
     def test_conjugate(self, arr):
         q = GeneralQuaternion(*arr)
         assert (q + q.conjugate()).is_real()
+        assert (q * q.conjugate()).is_real()
 
     @given(ANY_QUATERNION)
     def test_inverse(self, arr):
