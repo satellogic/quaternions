@@ -106,51 +106,6 @@ class GeneralQuaternion(object):
     def coordinates(self):
         return np.array([self.qr, self.qi, self.qj, self.qk])
 
-    @property
-    def basis(self):
-        qr, qi, qj, qk = self.coordinates
-        b0 = np.array([
-            qr ** 2 + qi ** 2 - qj ** 2 - qk ** 2,
-            2 * qr * qk + 2 * qi * qj,
-            -2 * qr * qj + 2 * qi * qk
-        ])
-        b1 = np.array([
-            -2 * qr * qk + 2 * qi * qj,
-            qr ** 2 - qi ** 2 + qj ** 2 - qk ** 2,
-            2 * qr * qi + 2 * qj * qk
-        ])
-        b2 = np.array([
-            2 * qr * qj + 2 * qi * qk,
-            -2 * qr * qi + 2 * qj * qk,
-            qr ** 2 - qi ** 2 - qj ** 2 + qk ** 2
-        ])
-        return b0, b1, b2
-
-    @classmethod
-    def _first_eigenvector(cls, matrix):
-        """ matrix must be a 4x4 symmetric matrix. """
-        vals, vecs = np.linalg.eigh(matrix)
-        # q is the eigenvec with heighest eigenvalue (already normalized)
-        q = vecs[:, -1]
-        if q[0] < 0:
-            q = -q
-        return cls(*q)
-
-    @staticmethod
-    def average(*quaternions, weights=None):
-        """
-        Return the quaternion such that its matrix minimizes the square distance
-        to the matrices of the quaternions in the argument list.
-
-        See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
-        """
-        b = np.array([q.coordinates for q in quaternions])
-        if weights is None:
-            weights = np.ones(len(quaternions))
-        m = b.T.dot(np.diag(weights)).dot(b)
-
-        return GeneralQuaternion._first_eigenvector(m)
-
     @classmethod
     def unit(cls):
         return cls(1, 0, 0, 0)

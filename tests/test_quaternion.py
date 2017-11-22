@@ -203,3 +203,25 @@ class QuaternionTest(unittest.TestCase):
         for q in [GeneralQuaternion(*arr).normalized(), Quaternion(*arr)]:  # both ways are supported
             assert Quaternion.log(GeneralQuaternion.exp(q)) == q
             assert GeneralQuaternion.exp(Quaternion.log(q)) == q
+
+    NUM_ELEMENTS = 25
+
+    @given(strategies.lists(elements=strategies.floats(min_value=-5, max_value=5),
+                            min_size=4+4*NUM_ELEMENTS, max_size=4+4*NUM_ELEMENTS))
+    def test_average(self, arr):
+
+        q = GeneralQuaternion(*arr[:4])
+        assume(q.norm() > DEFAULT_TOLERANCE)  # ignore quaternions of norm==0, whose inverse is numerically unstable
+
+        q = q.normalized()
+        randoms = [GeneralQuaternion(*arr[4*i: 4*i+4]) for i in range(1, self.NUM_ELEMENTS+1)]
+        q_with_noise = [q + n * (.1 * DEFAULT_TOLERANCE) for n in randoms]
+
+        # test without weights:
+        average = Quaternion.average(*q_with_noise)
+        assert average == q or average == -q
+
+        # test with weights:
+        weights = [1] + (self.NUM_ELEMENTS-1) * [0]  # only uses q_with_noise[0]
+        average = Quaternion.average(*q_with_noise, weights=weights)
+        assert average == q_with_noise[0] or average == -q_with_noise[0]

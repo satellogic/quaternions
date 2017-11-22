@@ -93,6 +93,31 @@ class Quaternion(GeneralQuaternion):
                 qr * qr - qi * qi - qj * qj + qk * qk]
         ])
 
+    @classmethod
+    def _first_eigenvector(cls, matrix):
+        """ matrix must be a 4x4 symmetric matrix. """
+        vals, vecs = np.linalg.eigh(matrix)
+        # q is the eigenvec with heighest eigenvalue (already normalized)
+        q = vecs[:, -1]
+        if q[0] < 0:
+            q = -q
+        return cls(*q)
+
+    @classmethod
+    def average(cls, *quaternions, weights=None):
+        """
+        Return the quaternion such that its matrix minimizes the square distance
+        to the matrices of the quaternions in the argument list.
+
+        See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
+        """
+        b = np.array([q.coordinates for q in quaternions])
+        if weights is None:
+            weights = np.ones(len(quaternions))
+        m = b.T.dot(np.diag(weights)).dot(b)
+
+        return cls._first_eigenvector(m)
+
     @property
     def basis(self):
         m = self.matrix
