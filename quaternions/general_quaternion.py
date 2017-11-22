@@ -22,7 +22,7 @@ class GeneralQuaternion(object):
 
     def __add__(self, p):
         if not is_quaternion(p):
-            raise QuaternionError('expected quaternion, got %s' % p)
+            raise QuaternionError('expected quaternion, got %s' % p.__class__.__name__)
         return GeneralQuaternion(self.qr + p.qr, self.qi + p.qi, self.qj + p.qj, self.qk + p.qk)
 
     def __sub__(self, p):
