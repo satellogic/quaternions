@@ -180,8 +180,15 @@ class QuaternionTest(unittest.TestCase):
         np.testing.assert_allclose(oaf(v), [v[2], -v[0], -v[1]])
 
     def test_type(self):
+        # Unit quaternion can be unitary or general:
         assert isinstance(GeneralQuaternion.unit(), GeneralQuaternion)
         assert isinstance(Quaternion.unit(), Quaternion)
+
+        # Unit quaternion can not be unitary:
+        assert isinstance(GeneralQuaternion.zero(), GeneralQuaternion)
+        assert not isinstance(Quaternion.zero(), Quaternion)
+        assert isinstance(Quaternion.zero(), GeneralQuaternion)
+
         assert isinstance(GeneralQuaternion.exp([1, 2, 3, 4]), GeneralQuaternion)
         assert isinstance(Quaternion.exp([1, 2, 3, 4]), Quaternion)
 

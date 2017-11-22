@@ -112,7 +112,7 @@ class GeneralQuaternion(object):
 
     @classmethod
     def zero(cls):
-        return cls(0, 0, 0, 0)
+        return GeneralQuaternion(0, 0, 0, 0)
 
     @classmethod
     def exp(cls, q):
