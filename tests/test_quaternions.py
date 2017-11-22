@@ -41,14 +41,14 @@ class QuaternionTest(unittest.TestCase):
         assert q == GeneralQuaternion(*q.coordinates)
 
     @given(ANY_QUATERNION)
-    def test_is_equal(self, arr):
+    def test_distance(self, arr):
         assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
         q = Quaternion(*arr)
         assert q.distance(q) == pytest.approx(0)
         assert q.distance(-q) == pytest.approx(0)
 
     @given(ANY_QUATERNION)
-    def test_is_equal(self, arr):
+    def test_positive_representant(self, arr):
         assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
         q = Quaternion(*arr)
         assert q.positive_representant == q or q.positive_representant == -q

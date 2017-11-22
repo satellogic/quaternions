@@ -59,7 +59,7 @@ class Quaternion(GeneralQuaternion):
 
     def distance(self, other):
         """ Returns the distance in radians between two unitary quaternions. """
-        return min(super().distance(other), super().distance(-other))
+        return min(super().euclidean_distance(other), super().euclidean_distance(-other))
 
     @property
     def positive_representant(self):

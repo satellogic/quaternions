@@ -55,7 +55,7 @@ class GeneralQuaternionTest(unittest.TestCase):
     @given(ANY_QUATERNION)
     def test_distance(self, arr):
         q = GeneralQuaternion(*arr)
-        assert q.norm() == q.distance(GeneralQuaternion.zero()) == q.distance(2 * q)
+        assert q.norm() == q.euclidean_distance(GeneralQuaternion.zero()) == q.euclidean_distance(2 * q)
 
     @given(ANY_QUATERNION)
     def test_normalized(self, arr):
