@@ -12,7 +12,7 @@ with open(os.path.join("quaternions", "version.py")) as fp:
 setup(
     name='satellogic_quaternions',
     version=version["__version__"],
-    author='Matias Graña',
+    author='Matias Graña, Enrique Toomey, Slava Kerner',
     author_email='matias@satellogic.com',
     description='This is a library for dealing with quaternions in Python in a unified way.',
     long_description=open('README.md').read(),
