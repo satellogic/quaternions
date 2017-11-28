@@ -3,7 +3,7 @@ import numpy as np
 from collections import Iterable
 import numbers
 
-from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner, orthogonal_matrix)
+from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner, xi_matrix)
 from quaternions.general_quaternion import GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, exp
 
 
@@ -226,6 +226,7 @@ class Quaternion(GeneralQuaternion):
         K[1:4, 0] = [i, j, k]
         K[1:4, 1:4] = S - sigma * np.identity(3)
         return Quaternion._first_eigenvector(K)
+    
     @staticmethod
     def average_and_std_naive(*quaternions, weights=None):
         """
@@ -272,11 +273,11 @@ class Quaternion(GeneralQuaternion):
         R_inverse = np.linalg.inv(R)
         orthogonal_matrix_sum = np.zeros((4, 4))
         for q in quaternions:
-            orthogonal_matrix_sum += orthogonal_matrix(q).dot(
-                R_inverse.dot(orthogonal_matrix(q).T))
+            orthogonal_matrix_sum += xi_matrix(q).dot(
+                R_inverse.dot(xi_matrix(q).T))
 
-        cov_dev_matrix = np.linalg.inv(orthogonal_matrix(q_average).T.dot(
-            orthogonal_matrix_sum.dot(orthogonal_matrix(q_average))))
+        cov_dev_matrix = np.linalg.inv(xi_matrix(q_average).T.dot(
+            orthogonal_matrix_sum.dot(xi_matrix(q_average))))
 
         return q_average, cov_dev_matrix
 

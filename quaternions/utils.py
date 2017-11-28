@@ -19,20 +19,20 @@ def sigma_lerner(covariance_matrix):
     return 1.87 * np.sqrt(max(values))
 
 
-def rotation_matrix(quaternion):
+def cross_product_matrix(quaternion):
     """
-    Computes rotation matrix form quaternion.
-    Function related to average_and_std_theorical
+    Auxiliary matrix for average_and_std_theorical calculations.
+    equation (7) from Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman
     """
     return np.array([[0, -quaternion.qk, quaternion.qj],
                      [quaternion.qk, 0, -quaternion.qi],
                      [-quaternion.qj, quaternion.qi, 0]])
 
 
-def orthogonal_matrix(quaternion):
+def xi_matrix(quaternion):
     """
-    Computes orthogonal matrix form quaternion.
-    Function related to average_and_std_theorical
+    Auxiliary matrix for average_and_std_theorical calculations.
+    equation (15) from Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman
     """
-    return np.vstack((quaternion.qr * np.eye(3) + rotation_matrix(quaternion),
+    return np.vstack((quaternion.qr * np.eye(3) + cross_product_matrix(quaternion),
                       -np.array([quaternion.qi, quaternion.qj, quaternion.qk])))
