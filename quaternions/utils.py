@@ -14,7 +14,10 @@ def covariance_matrix_from_angles(angles_list):
 
 
 def sigma_lerner(covariance_matrix):
-    """ Computes sigma lerner from covariance matrix"""
+    """
+    Computes sigma lerner from covariance matrix using Lerner's method as explained in
+    'The attitude determination system of the RAX satellite', page 133, doi:10.1016/j.actaastro.2012.02.001
+    """
     values, _ = np.linalg.eig(covariance_matrix)
     return 1.87 * np.sqrt(max(values))
 
