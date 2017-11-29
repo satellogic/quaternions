@@ -7,7 +7,7 @@ def covariance_matrix_from_angles(angles_list):
     :param angles_list: list of NumPy arrays
     """
     covariance_matrix = sum(np.outer(angles, angles) for angles in angles_list)
-    covariance_matrix /= (len(angles_list) + 1)
+    covariance_matrix /= (len(angles_list) - 1)
     return covariance_matrix
 
 
