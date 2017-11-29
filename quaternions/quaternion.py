@@ -230,24 +230,24 @@ class Quaternion(GeneralQuaternion):
     @staticmethod
     def average_and_std_naive(*quaternions, weights=None):
         """
-        Naive implementation of std. dev. calculation, assuming small angles between quaternions
-        and average. Returns average quaternion and stddev of input quaternion list in deg
+        Naive implementation of std. dev. calculation and average.
+        Returns average quaternion and stddev of input quaternion list in deg
         """
         if weights is None:
             weights = np.ones(len(quaternions))
         q_average = Quaternion.average(*quaternions, weights=weights)
         diffs = np.array([q_average.distance(quat) for quat in quaternions])
-        # TODO: check that this way of taking into account weights in stddev calculation is ok
         stddev = np.degrees(np.sqrt(sum((diffs ** 2) * weights) / np.sum(weights)))
         return q_average, stddev
 
     @staticmethod
     def average_and_std_lerner(*quaternions, weights=None):
         """
-        Calculates the std. dev. as 1.87 of the root of the maximum eigenvalue of the covariance matrix,
-        called sigma lerner. This covariance matrix is the one asociated with the rotation angles of
-        each input quaternion agains the average one. Returns the average quaternion and the sigma lerner
-        in deg.
+        Returns the average quaternion and the sigma lerner in deg. Computes sigma lerner
+        using Lerner's method as explained in 'The attitude determination system of the
+        RAX satellite', page 133, doi:10.1016/j.actaastro.2012.02.001, with the slight
+        difference that the small angle aproximation of euler angles is used instead of
+        gibbs vectors, leading to a factor a 2.
         :param quaternions: Quaternion objects
         :param weights:
         :return: average quaternions, sigma lerner
@@ -263,7 +263,7 @@ class Quaternion(GeneralQuaternion):
         '''
         Returns the quaternion such that its matrix minimizes the square distance
         to the matrices of the quaternions in the argument list, and the resulting
-        covariance matrix asociated with that quaternion. Input matrix R (3x3) is
+        covariance matrix associated with that quaternion. Input matrix R (3x3) is
         assume to be the same for all input quaternions, and in rads**2
 
         See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
