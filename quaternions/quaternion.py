@@ -254,7 +254,7 @@ class Quaternion(GeneralQuaternion):
         """
         q_average = Quaternion.average(*quaternions, weights=weights)
         diffs = [quat / q_average for quat in quaternions]
-        angles_list = np.array([[2 * diff.coordinates[i] for i in [1, 2, 3]] for diff in diffs])
+        angles_list = [2 * diff.coordinates[1:] for diff in diffs]
         covariance_matrix = covariance_matrix_from_angles(angles_list)
         return q_average, np.degrees(sigma_lerner(covariance_matrix))
 
