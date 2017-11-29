@@ -3,6 +3,7 @@ import numpy as np
 from collections import Iterable
 import numbers
 
+from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner, xi_matrix)
 from quaternions.general_quaternion import GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, exp
 
 
@@ -225,6 +226,60 @@ class Quaternion(GeneralQuaternion):
         K[1:4, 0] = [i, j, k]
         K[1:4, 1:4] = S - sigma * np.identity(3)
         return Quaternion._first_eigenvector(K)
+    
+    @staticmethod
+    def average_and_std_naive(*quaternions, weights=None):
+        """
+        Naive implementation of std. dev. calculation and average.
+        Returns average quaternion and stddev of input quaternion list in deg
+        """
+        if weights is None:
+            weights = np.ones(len(quaternions))
+        q_average = Quaternion.average(*quaternions, weights=weights)
+        diffs = np.array([q_average.distance(quat) for quat in quaternions])
+        stddev = np.degrees(np.sqrt(sum((diffs ** 2) * weights) / np.sum(weights)))
+        return q_average, stddev
+
+    @staticmethod
+    def average_and_std_lerner(*quaternions, weights=None):
+        """
+        Returns the average quaternion and the sigma lerner in deg. Computes sigma lerner
+        using Lerner's method as explained in 'The attitude determination system of the
+        RAX satellite', page 133, doi:10.1016/j.actaastro.2012.02.001, with the slight
+        difference that the small angle aproximation of euler angles is used instead of
+        gibbs vectors, leading to a factor a 2.
+        :param quaternions: Quaternion objects
+        :param weights:
+        :return: average quaternions, sigma lerner
+        """
+        q_average = Quaternion.average(*quaternions, weights=weights)
+        diffs = [quat / q_average for quat in quaternions]
+        angles_list = [2 * diff.coordinates[1:] for diff in diffs]
+        covariance_matrix = covariance_matrix_from_angles(angles_list)
+        return q_average, np.degrees(sigma_lerner(covariance_matrix))
+
+    @staticmethod
+    def average_and_covariance(*quaternions, R=np.eye(3)):
+        '''
+        Returns the quaternion such that its matrix minimizes the square distance
+        to the matrices of the quaternions in the argument list, and the resulting
+        covariance matrix associated with that quaternion. Input matrix R (3x3) is
+        assume to be the same for all input quaternions, and in rads**2
+
+        See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
+        '''
+        q_average = Quaternion.average(*quaternions)
+
+        R_inverse = np.linalg.inv(R)
+        orthogonal_matrix_sum = np.zeros((4, 4))
+        for q in quaternions:
+            orthogonal_matrix_sum += xi_matrix(q).dot(
+                R_inverse.dot(xi_matrix(q).T))
+
+        cov_dev_matrix = np.linalg.inv(xi_matrix(q_average).T.dot(
+            orthogonal_matrix_sum.dot(xi_matrix(q_average))))
+
+        return q_average, cov_dev_matrix
 
     @staticmethod
     def integrate_from_velocity_vectors(vectors):

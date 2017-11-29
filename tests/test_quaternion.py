@@ -3,6 +3,8 @@ import unittest
 from hypothesis import given, assume, strategies
 import numpy as np
 import pytest
+import os
+import json
 
 from quaternions import Quaternion, QuaternionError, GeneralQuaternion
 from quaternions.general_quaternion import DEFAULT_TOLERANCE, exp, log
@@ -249,3 +251,54 @@ class QuaternionTest(unittest.TestCase):
             q([1, 2])
         with pytest.raises(QuaternionError):
             q({1, 2, 3})
+
+class QuaternionStdDevTests(unittest.TestCase):
+    # tolerance is this big because average_and_std_naive gives slightly different results than matlab implementation
+    # this may be due to the way weights are taken into account, as in matlab implementation weights were not being used
+    tolerance_deg = 1e-3
+    basedir = os.path.join(os.path.split(os.path.abspath(__file__))[0], 'data')
+    matlab_basedir = os.path.join(basedir, 'matlab_results')
+
+    @classmethod
+    def setUpClass(cls):
+        with open(os.path.join(cls.matlab_basedir, 'matlab_results.json'), 'r') as fid:
+            cls.results = json.load(fid)
+
+        cls.quat_diff_matlab_quats = {}
+        for star_vectors_noise_arcsec in cls.results.keys():
+            quat_diff_matlab = np.loadtxt(
+                os.path.join(cls.matlab_basedir, 'quat_diff_ST1_ST2_{}_arcsec.txt'.format(star_vectors_noise_arcsec)))
+            cls.quat_diff_matlab_quats[star_vectors_noise_arcsec] = [Quaternion(*q) for q in quat_diff_matlab]
+
+    def test_average_std_naive(self):
+
+        for star_vectors_noise_arcsec in self.results.keys():
+            quat_diff_matlab_quats = self.quat_diff_matlab_quats[star_vectors_noise_arcsec]
+            _, mean_total_rotation_angle_deg = Quaternion.average_and_std_naive(*quat_diff_matlab_quats)
+
+            assert abs(mean_total_rotation_angle_deg - self.results[star_vectors_noise_arcsec]['mean_total_angle'])\
+                   < self.tolerance_deg
+
+    def test_average_std_sigma_lerner(self):
+        for star_vectors_noise_arcsec in self.results.keys():
+            quat_diff_matlab_quats = self.quat_diff_matlab_quats[star_vectors_noise_arcsec]
+            _, sigma_lerner_deg = Quaternion.average_and_std_lerner(*quat_diff_matlab_quats)
+
+            assert abs(sigma_lerner_deg - self.results[star_vectors_noise_arcsec]['sigma_lerner']) \
+                   < self.tolerance_deg
+
+    def test_average_and_covariance(self):
+        # This tests that the trace of the resultant covariance matrix of the
+        # averaged test is around the same value than the input covariance matrix
+        # if an individual quaternion divided np.sqrt(N-1), where N is the number of
+        # quaternions
+        for star_vectors_noise_arcsec in self.results.keys():
+            quat_diff_matlab_quats = self.quat_diff_matlab_quats[star_vectors_noise_arcsec]
+            sigma_lerner_in_deg = self.results[star_vectors_noise_arcsec]['sigma_lerner']
+            _, covariance_rad = Quaternion.average_and_covariance(
+                *quat_diff_matlab_quats, R=np.deg2rad(sigma_lerner_in_deg)**2*np.eye(3))
+            sigma_lerner_out_deg = np.rad2deg(np.sqrt(np.trace(covariance_rad)/3))\
+                        * np.sqrt(len(quat_diff_matlab_quats)-1)
+
+            assert abs(sigma_lerner_in_deg - sigma_lerner_out_deg ) \
+                   < self.tolerance_deg
