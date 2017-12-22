@@ -31,8 +31,11 @@ setup(
         'numpy',
     ],
     extras_require={
-        "dev": [
-            "hypothesis",
+        'dev': [
+            'flake8 >= 2.5.4',
+            'hypothesis',
+            'pytest',
+            'pytest-coverage',
         ]
     }
 )
