@@ -74,7 +74,7 @@ class GeneralQuaternion(object):
         return self.qr * self.qr + self.qi * self.qi + self.qj * self.qj + self.qk * self.qk
 
     def __repr__(self):
-        return 'GeneralQuaternion{}'.format(tuple(self.coordinates))
+        return '{}{}'.format(self.__class__.__name__, tuple(self.coordinates))
 
     def __str__(self):
         return '({qr:.6g}{qi:+.6g}i{qj:+.6g}j{qk:+.6g}k)'.format(**self.__dict__)
