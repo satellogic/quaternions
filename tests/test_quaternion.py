@@ -275,6 +275,13 @@ class QuaternionTest(unittest.TestCase):
         assert repr(unit_quat).startswith('Quaternion(')
         assert eval(repr(unit_quat)) == unit_quat
 
+    @given(strategies.integers(min_value=1, max_value=5))
+    def test_integrate(self, number_of_vectors):
+        vectors = [np.array([0, 0, i / 10]) for i in range(1, number_of_vectors + 1)]
+        v = Quaternion.integrate_from_velocity_vectors(vectors)
+        expected = [0, 0, number_of_vectors * (number_of_vectors + 1) / 20]
+        np.testing.assert_allclose(expected, v)
+
 
 class QuaternionStdDevTests(unittest.TestCase):
     # tolerance is this big because average_and_std_naive gives slightly different results than matlab implementation
