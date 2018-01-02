@@ -252,6 +252,12 @@ class QuaternionTest(unittest.TestCase):
         with pytest.raises(QuaternionError):
             q({1, 2, 3})
 
+    def test_repr(self):
+        unit_quat = Quaternion(1, 2, 3, 4)
+        assert repr(unit_quat).startswith('Quaternion(')
+        assert eval(repr(unit_quat)) == unit_quat
+
+
 class QuaternionStdDevTests(unittest.TestCase):
     # tolerance is this big because average_and_std_naive gives slightly different results than matlab implementation
     # this may be due to the way weights are taken into account, as in matlab implementation weights were not being used
