@@ -160,7 +160,7 @@ class QuaternionTest(unittest.TestCase):
     def test_qmethod(self):
         v1, v2 = [2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]
         w1, w2 = [0.8, 0.6, 0], [-0.6, 0.8, 0]
-        q = Quaternion.from_qmethod(np.array([v1, v2]).T, np.array([w1, w2]).T, np.ones(2))
+        q = Quaternion.from_qmethod(np.array([v1, v2]).T, np.array([w1, w2]).T)
 
         np.testing.assert_allclose(q(v1), w1, atol=1e-10)
         np.testing.assert_allclose(q(v2), w2, atol=1e-10)
