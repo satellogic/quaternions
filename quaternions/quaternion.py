@@ -6,6 +6,8 @@ import numbers
 from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner, xi_matrix)
 from quaternions.general_quaternion import GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, exp
 
+import warnings
+
 
 class Quaternion(GeneralQuaternion):
     ''' A class that holds unit quaternions (norm==1, aka versors). It actually holds Q^op, as
@@ -115,6 +117,7 @@ class Quaternion(GeneralQuaternion):
 
     @property
     def basis(self):
+        warnings.warn('This property will be deprecated. Use matrix instead', DeprecationWarning)
         m = self.matrix
         return m[0, :], m[1, :], m[2, :]
 
@@ -152,6 +155,7 @@ class Quaternion(GeneralQuaternion):
         Notice that Tetra gives a different roll angle, so this is not
         a fixed standard.
         '''
+        warnings.warn('This method will be deprecated', DeprecationWarning)
         twisted = self.OpticalAxisFirst() * self
         ra, dec, roll = twisted.ra_dec_roll
         return np.array([-ra, dec, roll - 180])
