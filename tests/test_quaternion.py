@@ -165,6 +165,24 @@ class QuaternionTest(unittest.TestCase):
         np.testing.assert_allclose(q(v1), w1, atol=1e-10)
         np.testing.assert_allclose(q(v2), w2, atol=1e-10)
 
+    def test_weights_change_in_qmethod(self):
+        v1, v2 = [1, 0, 0], [0, 1, 0]
+        w1, w2 = [1, 0, 0], [-1/2, np.sqrt(3) / 2, 0]
+
+        previous_cos_1 = np.inf
+        previous_cos_2 = -np.inf
+        for second_weight in np.linspace(0.1, 2, 10):
+            q = Quaternion.from_qmethod(np.array([v1, v2]).T, np.array([w1, w2]).T, [1, second_weight])
+            current_cos_1 = q(v1).dot(w1)
+            current_cos_2 = q(v2).dot(w2)
+
+            # since first weight is constant and second weight increases, correlation with
+            # first vector should go down and correlation with second vector should go up
+            assert current_cos_1 < previous_cos_1
+            assert current_cos_2 > previous_cos_2
+
+            previous_cos_1, previous_cos_2 = current_cos_1, current_cos_2
+
     @given(ANY_ROTATION_VECTOR)
     def test_from_qmethod_with_noise(self, r):
         assume(np.linalg.norm(r) > Quaternion.tolerance)
