@@ -147,7 +147,7 @@ class QuaternionTest(unittest.TestCase):
             [s1 * s3 - c1 * c3 * s2, c3 * s1 + c1 * s2 * s3,  c1 * c2]   # noqa
         ]))
 
-        assert Quaternion.from_ra_dec_roll(*arr) == Quaternion.from_matrix(expected)
+        assert Quaternion.from_ra_dec_roll(*arr).is_equal(Quaternion.from_matrix(expected), tolerance=5e-8)
 
     @given(ANY_QUATERNION)
     def test_ra_dec_roll(self, arr):
