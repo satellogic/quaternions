@@ -102,7 +102,10 @@ class GeneralQuaternion(object):
         return self / self.norm()
 
     def euclidean_distance(self, other):
-        """ Returns the euclidean distance between two quaternions. Note: differs from unitary quaternions distance. """
+        """
+        Returns the euclidean distance between two quaternions.
+        Note: differs from unitary quaternions distance.
+        """
         return (self - other).norm()
 
     def is_unitary(self, tolerance=DEFAULT_TOLERANCE):
