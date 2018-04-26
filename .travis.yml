@@ -27,3 +27,13 @@ after_success:
 cache:
   apt: true
   pip: true
+
+deploy:
+  provider: pypi
+  server: https://test.pypi.org/simple/
+  user: JuanLuisCano
+  password:
+    secure: QUzeB2+ePaEo3yVvj88o/L2wGtgyVBNJfkCQmAI8zzbFKE/crS4zaTcdPUBp59pg90I6WZmpINUPfNPdapNxmFtWDtMDaIkmXBIjihvIoSLUurRkyCf77lKnTHD0B75gCiErWw/r0N1gdCfl9T3RO0ILGTIq4L/0zPIkT9KE/uCvxJdM7Ks3cljGdrsPJrZDyoD1Vj/8Wvd5sgpbnUDNj+9/Nt/3XaaRdtel+1aZo0cM9ic1FA+t/aXQDvZYbMpg/FFHv5mw15lhBblKDVXSClS0wkCkcdzWw7qAnUGgCuvANa8xu2MGdLyPJKMUtgXpDjyX6vF91zKrJezpdbWp2fYjPVjjVP9Bbta7qKMRzxL3YlRL4z2FsLidIT9iCjTKRsDG3hmkcvRCORCYXrPLCvO5YW25Xszx1N+PlQlc/WGPKSeub3kOWYuYAggHa3sSkm6JOyq1FPwB166zg2R7bW75sOa9FQmWOmGo68huqjgDMZBNVCodoyxPhW0upKoqxN7WoHF8LqOUkolwH1jm1fp80INhWiB73fO8E/YBHKOz7182IOJ2ZJKbl6UpLGlU8ki3lQUylbgoHhF6tV0O1QNOdvaiD6R6x4N3miXF1fpqXfkRgM8vsSq7v/MuKlRr9L/uPPhdojpJ90sgkFJLqHDws12PY4rGdEatyqLSzuQ=
+  on:
+    tags: true
+    branch: master
