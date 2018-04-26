@@ -7,7 +7,7 @@ setup(
     name='satellogic_quaternions',
     version=versioneer.get_version(),
     author='Matias Graña, Enrique Toomey, Slava Kerner, Juan Luis Cano',
-    author_email='matias@satellogic.com',
+    author_email='matias@satellogic.com, henry@satellogic.com, slava@satellogic.com, juanlu@satellogic.com',
     description='This is a library for dealing with quaternions in Python in a unified way.',
     url="https://github.com/satellogic/quaternions/",
     long_description=open('README.md').read(),
