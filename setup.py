@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
-import os.path
 from setuptools import setup, find_packages
-
-
-# https://packaging.python.org/guides/single-sourcing-package-version/
-version = {}
-with open(os.path.join("quaternions", "version.py")) as fp:
-    exec(fp.read(), version)
 
 
 setup(
     name='satellogic_quaternions',
-    version=version["__version__"],
     author='Matias Graña, Enrique Toomey, Slava Kerner',
     author_email='matias@satellogic.com',
     description='This is a library for dealing with quaternions in Python in a unified way.',
