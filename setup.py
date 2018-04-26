@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 from setuptools import setup, find_packages
+import versioneer
 
 
 setup(
     name='satellogic_quaternions',
+    version=versioneer.get_version(),
     author='Matias Graña, Enrique Toomey, Slava Kerner',
     author_email='matias@satellogic.com',
     description='This is a library for dealing with quaternions in Python in a unified way.',
@@ -29,5 +31,6 @@ setup(
             'pytest',
             'pytest-coverage',
         ]
-    }
+    },
+    cmdclass=versioneer.get_cmdclass(),
 )
