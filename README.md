@@ -88,4 +88,4 @@ array([[-0.66666667,  0.13333333,  0.73333333],
 License
 =======
 
-quaternions is Satellogic SA Copyright 2017. All our code is GPLv3 licensed.
+quaternions is Satellogic SA Copyright 2017-2018. All our code is GPLv3 licensed.

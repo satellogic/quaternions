@@ -6,9 +6,10 @@ import versioneer
 setup(
     name='satellogic_quaternions',
     version=versioneer.get_version(),
-    author='Matias Graña, Enrique Toomey, Slava Kerner',
+    author='Matias Graña, Enrique Toomey, Slava Kerner, Juan Luis Cano',
     author_email='matias@satellogic.com',
     description='This is a library for dealing with quaternions in Python in a unified way.',
+    url="https://github.com/satellogic/quaternions/",
     long_description=open('README.md').read(),
     packages=find_packages(exclude=["tests"]),
     license="GPLv3",
@@ -32,5 +33,6 @@ setup(
             'pytest-coverage',
         ]
     },
+    long_description_content_type='text/markdown',
     cmdclass=versioneer.get_cmdclass(),
 )
