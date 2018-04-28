@@ -4,7 +4,9 @@ from collections import Iterable
 import numbers
 
 from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner, xi_matrix)
-from quaternions.general_quaternion import GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, exp
+from quaternions.general_quaternion import (
+    GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, exp
+)
 
 import warnings
 
@@ -44,7 +46,9 @@ class Quaternion(GeneralQuaternion):
         try:
             return self * p
         except Exception as e:
-            raise QuaternionError('expected list of 3 elements, got %s, caused error: %s' % (p.__class__.__name__, e))
+            raise QuaternionError(
+                'expected list of 3 elements, got %s, caused error: %s' %
+                (p.__class__.__name__, e))
 
     def is_equal(self, other, tolerance=DEFAULT_TOLERANCE):
         """ compares as quaternions, i.e. up to sign. """
@@ -230,7 +234,7 @@ class Quaternion(GeneralQuaternion):
         K[1:4, 0] = [i, j, k]
         K[1:4, 1:4] = S - sigma * np.identity(3)
         return Quaternion._first_eigenvector(K)
-    
+
     @staticmethod
     def average_and_std_naive(*quaternions, weights=None):
         """
