@@ -121,3 +121,7 @@ class GeneralQuaternionTest(unittest.TestCase):
         assume(np.linalg.norm(arr) > DEFAULT_TOLERANCE)
         q = GeneralQuaternion(*arr)
         assert log(q) == q.log()
+
+    def test_repr(self):
+        gen_quat = GeneralQuaternion(1, 2, 3, 4)
+        assert repr(gen_quat) == 'GeneralQuaternion(1, 2, 3, 4)'

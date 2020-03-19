@@ -161,10 +161,28 @@ class QuaternionTest(unittest.TestCase):
     def test_qmethod(self):
         v1, v2 = [2 / 3, 2 / 3, 1 / 3], [2 / 3, -1 / 3, -2 / 3]
         w1, w2 = [0.8, 0.6, 0], [-0.6, 0.8, 0]
-        q = Quaternion.from_qmethod(np.array([v1, v2]).T, np.array([w1, w2]).T, np.ones(2))
+        q = Quaternion.from_qmethod(np.array([v1, v2]).T, np.array([w1, w2]).T)
 
         np.testing.assert_allclose(q(v1), w1, atol=1e-10)
         np.testing.assert_allclose(q(v2), w2, atol=1e-10)
+
+    def test_weights_change_in_qmethod(self):
+        v1, v2 = [1, 0, 0], [0, 1, 0]
+        w1, w2 = [1, 0, 0], [-1/2, np.sqrt(3) / 2, 0]
+
+        previous_cos_1 = np.inf
+        previous_cos_2 = -np.inf
+        for second_weight in np.linspace(0.1, 2, 10):
+            q = Quaternion.from_qmethod(np.array([v1, v2]).T, np.array([w1, w2]).T, [1, second_weight])
+            current_cos_1 = q(v1).dot(w1)
+            current_cos_2 = q(v2).dot(w2)
+
+            # since first weight is constant and second weight increases, correlation with
+            # first vector should go down and correlation with second vector should go up
+            assert current_cos_1 < previous_cos_1
+            assert current_cos_2 > previous_cos_2
+
+            previous_cos_1, previous_cos_2 = current_cos_1, current_cos_2
 
     @given(ANY_ROTATION_VECTOR)
     def test_from_qmethod_with_noise(self, r):
@@ -252,6 +270,19 @@ class QuaternionTest(unittest.TestCase):
             q([1, 2])
         with pytest.raises(QuaternionError):
             q({1, 2, 3})
+
+    def test_repr(self):
+        unit_quat = Quaternion(1, 2, 3, 4)
+        assert repr(unit_quat).startswith('Quaternion(')
+        assert eval(repr(unit_quat)) == unit_quat
+
+    @given(strategies.integers(min_value=1, max_value=5))
+    def test_integrate(self, number_of_vectors):
+        vectors = [np.array([0, 0, i / 10]) for i in range(1, number_of_vectors + 1)]
+        v = Quaternion.integrate_from_velocity_vectors(vectors)
+        expected = [0, 0, number_of_vectors * (number_of_vectors + 1) / 20]
+        np.testing.assert_allclose(expected, v)
+
 
 class QuaternionStdDevTests(unittest.TestCase):
     # tolerance is this big because average_and_std_naive gives slightly different results than matlab implementation
