@@ -19,7 +19,6 @@ matrix:
 
 install:
     - "pip install --editable .[dev]"
-    - "pip install python-coveralls"
 script:
     - "pytest -v  --cov-report= --cov=quaternions tests/"
 after_script:
@@ -27,6 +26,7 @@ after_script:
 
 # report coverage to coveralls.io
 after_success:
+    - "pip install python-coveralls"
     - coveralls
 
 cache:
