@@ -18,6 +18,8 @@ matrix:
     - python: "nightly"
 
 install:
+    - "python -m pip install --upgrade pip setuptools"
+    - "pip install -U pytest"
     - "pip install --editable .[dev]"
 script:
     - "pytest -v  --cov-report= --cov=quaternions tests/"
