@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
-import os.path
 from setuptools import setup, find_packages
-
-
-# https://packaging.python.org/guides/single-sourcing-package-version/
-version = {}
-with open(os.path.join("quaternions", "version.py")) as fp:
-    exec(fp.read(), version)
+import versioneer
 
 
 setup(
     name='satellogic_quaternions',
-    version=version["__version__"],
-    author='Matias Graña, Enrique Toomey, Slava Kerner',
-    author_email='matias@satellogic.com',
+    version=versioneer.get_version(),
+    author='Matias Graña, Enrique Toomey, Slava Kerner, Juan Luis Cano',
+    author_email='matias@satellogic.com, henry@satellogic.com, slava@satellogic.com, juanlu@satellogic.com',
     description='This is a library for dealing with quaternions in Python in a unified way.',
+    url="https://github.com/satellogic/quaternions/",
     long_description=open('README.md').read(),
     packages=find_packages(exclude=["tests"]),
     license="GPLv3",
@@ -37,5 +32,7 @@ setup(
             'pytest',
             'pytest-coverage',
         ]
-    }
+    },
+    long_description_content_type='text/markdown',
+    cmdclass=versioneer.get_cmdclass(),
 )

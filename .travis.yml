@@ -3,18 +3,24 @@ language: python
 python:
       - "3.4"
       - "3.5"
-      - "3.5-dev"
+      - "3.5"
       - "3.6"
-      - "3.6-dev"
-      - "nightly" # currently points to 3.7-dev
+      - "3.7"
+      - "3.8"
+
+branches:
+  only:
+  - master
+  - /^\d+\.\d+\.\d+$/
 
 matrix:
   allow_failures:
     - python: "nightly"
 
 install:
+    - "python -m pip install --upgrade pip setuptools"
+    - "pip install -U pytest 'coverage<5'"
     - "pip install --editable .[dev]"
-    - "pip install python-coveralls"
 script:
     - "pytest -v  --cov-report= --cov=quaternions tests/"
 after_script:
@@ -22,8 +28,20 @@ after_script:
 
 # report coverage to coveralls.io
 after_success:
+    - "pip install python-coveralls"
     - coveralls
 
 cache:
   apt: true
   pip: true
+
+deploy:
+  provider: pypi
+  user: JuanLuisCano
+  password:
+    secure: FKWaKl+nJjFN4PYEHq2MTDHwllFgjpu4TTgJbWgjIhbWugJfNwnZw7JEB0YySgLBKw/JoQMVFZvYQLjWERfVhvQAIJ4/140elGDAXlPStoAmi76cfktmduWIRy/zrRk91muPOWoM3HX9pk4yPOqRfyzSMz8hrXQ8WZrye7PrZcafUVn3CpG66KO8+LHjVVh/Dpa1sYAikYzXy6z+7eGoDxJWmhHvAZNvsL56CFjw5rZ/zPK99R9VfrxVVOh4ehy/kkXZatVqlIEeYQ0cqiJIzBAq7B+4drltZCXAyxePXFGymseXgZetQkjBqKYWdjBaAnlseJ9bafGs15CsMBcs3dCZvvRl3zRq3ENIBwAURLlhPGasRbub7775d7XmduGDfrxyh33sb3Hfsxi6vheG3u00unikgMwZOqaXBpP2bThGXCD3tqWgpsP1FMnjCtDdx3Pk40kP5oWNttXX7DJ4Y3txstBUpdjNp0ALw0Iw5EijSWLXUqr3qSf2sy2oPDK3Ie9MiRM1xDbOHDAFsEc7gMCeKmZMV9Mj0YnW333t/UvivpSzy2p5UsEOCxWrWh6B8q+J1i09fyuoi1UkGqDjmYKS9PpeisRKPcEyyCAhOGCnkQ1VHz/8JwSGTYnuEBYBYOeai3JSP366CfI09T1ZK4OUI7z9cIW8M1HcKQ1qEOE=
+  on:
+    tags: true
+    branch: master
+    python: "3.6"
+  distributions: "sdist bdist_wheel"
