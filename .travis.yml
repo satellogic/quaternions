@@ -5,24 +5,26 @@ python:
       - "3.5"
       - "3.5-dev"
       - "3.6"
-      - "3.6-dev"
-      - "nightly" # currently points to 3.7-dev
+      #- "3.6-dev"
+      #- "nightly" # currently points to 3.7-dev
 
 matrix:
   allow_failures:
     - python: "nightly"
 
 install:
-    - "pip install --editable .[dev]"
-    - "pip install python-coveralls"
+    - pip install --editable .[dev]
+    - if [[ $TRAVIS_PYTHON_VERSION < 3.5 ]] ; then pip install 'pytest==3.8.2' ; elif [[ $TRAVIS_PYTHON_VERSION < 3.6 ]] ; then pip install 'pytest>=5.4.3' ; else pip install python-coveralls ; fi
 script:
-    - "pytest -v  --cov-report= --cov=quaternions tests/"
+    - echo $COVERALLS
+    - echo $TRAVIS_PYTHON_VERSION
+    - if [[ $TRAVIS_PYTHON_VERSION < 3.6 ]] ; then pytest -v tests/ ; else pytest -v  --cov-report= --cov=quaternions tests/ ; fi
 after_script:
     - "flake8 quaternions"
 
 # report coverage to coveralls.io
 after_success:
-    - coveralls
+    - if [[ $TRAVIS_PYTHON_VERSION >= 3.6 ]] ; then coveralls ; fi
 
 cache:
   apt: true
