@@ -25,7 +25,7 @@ after_script:
 
 # report coverage to coveralls.io if Python version >= 3.6
 after_success:
-    - if [[ $TRAVIS_PYTHON_VERSION > 3.5z ]] ; then coveralls ; fi
+    - if [[ ! $TRAVIS_PYTHON_VERSION < 3.6 ]] ; then coveralls ; fi
 
 cache:
   apt: true
