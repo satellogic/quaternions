@@ -16,16 +16,16 @@ matrix:
 
 install:
     - pip install --editable .[dev]
-    - if [[ $TRAVIS_PYTHON_VERSION < 3.5 ]] ; then pip install 'pytest==3.8.2' ; elif [[ $TRAVIS_PYTHON_VERSION < 3.6 ]] ; then pip install 'pytest>=5.4.3' ; else pip install coveralls ; fi
+    - if [[ $TRAVIS_PYTHON_VERSION < 3.5 ]] ; then pip install 'pytest==3.8.2' ; elif [[ $TRAVIS_PYTHON_VERSION < 3.6 ]] ; then pip install 'pytest>=5.4.3' ; fi
+    - pip install coveralls
 script:
-    - echo $TRAVIS_PYTHON_VERSION
-    - if [[ $TRAVIS_PYTHON_VERSION < 3.6 ]] ; then pytest -v tests/ ; else pytest -v  --cov-report= --cov=quaternions tests/ ; fi
+    - pytest -v  --cov-report= --cov=quaternions tests/
 after_script:
     - "flake8 quaternions"
 
-# report coverage to coveralls.io if Python version >= 3.6
+# report coverage to coveralls.io
 after_success:
-    - if [[ ! $TRAVIS_PYTHON_VERSION < 3.6 ]] ; then coveralls ; fi
+    - coveralls
 
 cache:
   apt: true
