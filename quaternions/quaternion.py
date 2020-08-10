@@ -1,6 +1,6 @@
 import functools
 import numpy as np
-from collections import Iterable
+from collections.abc import Iterable
 import numbers
 
 from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner, xi_matrix)
