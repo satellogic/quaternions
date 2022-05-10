@@ -2,7 +2,7 @@ Quaternions library
 ===================
 
 [![Coverage Status](https://coveralls.io/repos/github/satellogic/quaternions/badge.svg)](https://coveralls.io/github/satellogic/quaternions)
-[![Build Status](https://travis-ci.org/satellogic/quaternions.svg?branch=add_travis_ci)](https://travis-ci.org/satellogic/quaternions)
+[![CI](https://github.com/satellogic/quaternions/actions/workflows/cicd.yml/badge.svg)](https://github.com/satellogic/quaternions/actions/workflows/cicd.yml)
 
 This is a library for dealing with quaternions in python in a unified way.
 
