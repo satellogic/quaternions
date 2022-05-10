@@ -16,6 +16,7 @@ setup(
     author_email='matias@satellogic.com',
     description='This is a library for dealing with quaternions in Python in a unified way.',
     long_description=open('README.md').read(),
+    long_description_content_type="text/markdown",
     packages=find_packages(exclude=["tests"]),
     license="GPLv3",
     classifiers=[
