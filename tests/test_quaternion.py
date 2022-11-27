@@ -125,6 +125,9 @@ class QuaternionTest(unittest.TestCase):
 
     @given(ANY_QUATERNION)
     def test_from_matrix(self, arr):
+        EXP = - int(np.log10(DEFAULT_TOLERANCE))
+        for i in range(len(arr)):
+            arr[i] = round(arr[i], EXP)
         assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
         q = Quaternion(*arr)
         assert q.from_matrix(q.matrix) == q
