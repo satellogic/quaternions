@@ -128,7 +128,7 @@ class QuaternionTest(unittest.TestCase):
     def test_from_matrix(self, arr):
         assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
         q = Quaternion(*arr)
-        assert q.from_matrix(q.matrix) == q
+        np.testing.assert_almost_equal(q.matrix, Quaternion.from_matrix(q.matrix).matrix)
 
     @given(ANY_QUATERNION)
     def test_basis(self, arr):
