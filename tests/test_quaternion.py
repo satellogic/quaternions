@@ -1,10 +1,11 @@
+import os
+import json
+import math
 import unittest
 
 from hypothesis import given, assume, strategies, example
 import numpy as np
 import pytest
-import os
-import json
 
 from quaternions import Quaternion, QuaternionError, GeneralQuaternion
 from quaternions.general_quaternion import DEFAULT_TOLERANCE, exp, log
@@ -42,11 +43,11 @@ class QuaternionTest(unittest.TestCase):
         assert q != q + Quaternion(1, 2, 3, 4)
         assert q == GeneralQuaternion(*q.coordinates)
 
-    @given(ANY_QUATERNION, strategies.floats(min_value=0, max_value=2 * np.math.pi-1e-4))
+    @given(ANY_QUATERNION, strategies.floats(min_value=0, max_value=2 * math.pi-1e-4))
     def test_distance(self, arr, angle_rad):
         assume(GeneralQuaternion(*arr).norm() > DEFAULT_TOLERANCE)
         q = Quaternion(*arr)
-        assert q.distance(-q) == pytest.approx(0) or q.distance(-q) == pytest.approx(2 * np.math.pi)
+        assert q.distance(-q) == pytest.approx(0) or q.distance(-q) == pytest.approx(2 * math.pi)
 
         for diff in [Quaternion.from_ra_dec_roll(np.degrees(angle_rad), 0, 0),
                      Quaternion.from_ra_dec_roll(0, np.degrees(angle_rad), 0),
@@ -94,7 +95,7 @@ class QuaternionTest(unittest.TestCase):
         np.testing.assert_allclose(complex_part / complex_norm, q.rotation_axis())
 
         # test alternative, direct way to calculate rotation angle:
-        angle = 2 * np.math.atan2(complex_norm, q.qr)
+        angle = 2 * math.atan2(complex_norm, q.qr)
         assert angle == pytest.approx(q.rotation_angle())
 
         # test rotation of q^2 is 2*rotation:

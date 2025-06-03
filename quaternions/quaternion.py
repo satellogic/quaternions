@@ -1,14 +1,15 @@
-import functools
-import numpy as np
 from collections.abc import Iterable
+import functools
+import math
 import numbers
+import warnings
+
+import numpy as np
 
 from quaternions.utils import (covariance_matrix_from_angles, sigma_lerner, xi_matrix)
 from quaternions.general_quaternion import (
     GeneralQuaternion, QuaternionError, DEFAULT_TOLERANCE, exp
 )
-
-import warnings
 
 
 class Quaternion(GeneralQuaternion):
@@ -138,7 +139,7 @@ class Quaternion(GeneralQuaternion):
     def rotation_angle(self):
         """ returns rotation angle [rad], in [0, 2 * pi) """
         angle = np.linalg.norm(self.rotation_vector)
-        angle %= 2 * np.math.pi
+        angle %= 2 * math.pi
         return angle
 
     @property
