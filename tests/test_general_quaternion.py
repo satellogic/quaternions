@@ -124,4 +124,4 @@ class GeneralQuaternionTest(unittest.TestCase):
 
     def test_repr(self):
         gen_quat = GeneralQuaternion(1, 2, 3, 4)
-        assert repr(gen_quat) == 'GeneralQuaternion(1, 2, 3, 4)'
+        assert repr(gen_quat) == 'GeneralQuaternion(np.int64(1), np.int64(2), np.int64(3), np.int64(4))'
