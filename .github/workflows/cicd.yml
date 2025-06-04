@@ -16,10 +16,6 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', 'pypy3.10']
-    env:
-      # Configure a constant location for the uv cache
-      UV_CACHE_DIR: /tmp/.uv-cache
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
@@ -35,15 +31,7 @@ jobs:
     - name: Flake8
       run: |
         flake8 quaternions
-    - name: Tests (3.4)
-      # Avoid .coveragerc in 3.4
-      if:
-        matrix.python-version == 3.4
-      run : |
-        pytest -v tests/
     - name: Tests
-      if:
-        matrix.python-version >= 3.5
       run: |
         pytest -v --cov=quaternions --cov-report=  tests/
     - name: Publish coverage to Coveralls
