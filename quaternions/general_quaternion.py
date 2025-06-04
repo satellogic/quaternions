@@ -74,6 +74,13 @@ class GeneralQuaternion(object):
         return self.qr * self.qr + self.qi * self.qi + self.qj * self.qj + self.qk * self.qk
 
     def __repr__(self):
+        coordinates = []
+        for _c in self.coordinates:
+            try:
+                c = _c.item()
+            except AttributeError:
+                c = _c
+            coordinates.append(c)
         return '{}{}'.format(self.__class__.__name__, tuple(self.coordinates))
 
     def __str__(self):
