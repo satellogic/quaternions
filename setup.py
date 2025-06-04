@@ -37,6 +37,7 @@ setup(
             'hypothesis',
             'pytest',
             'pytest-coverage',
+            'coveralls',
         ]
     }
 )

@@ -25,8 +25,6 @@ jobs:
     - name: Prepare Environment
       run: |
         python -m pip install --upgrade pip
-        pip install pytest==3.8.2
-        pip install coveralls
         pip install -e ".[dev]"
     - name: Flake8
       run: |
@@ -38,7 +36,7 @@ jobs:
       # If pushed / is a pull request against main repo
       if:
         ((github.event_name == 'push' && github.repository == 'satellogic/quaternions') ||
-        github.event.pull_request.base.repo.full_name == 'satellogic/quaternions') && matrix.python-version >= 3.5
+        github.event.pull_request.base.repo.full_name == 'satellogic/quaternions')
       uses: AndreMiras/coveralls-python-action@v20201129
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
