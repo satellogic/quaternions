@@ -38,7 +38,7 @@ requires = ["hatchling>=1.22.2"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "mocket/__init__.py"
+path = "quaternions/__init__.py"
 
 [tool.setuptools]
 packages = ["quaternions"]
