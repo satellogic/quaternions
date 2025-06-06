@@ -108,8 +108,8 @@ class GeneralQuaternionTest(unittest.TestCase):
     def test_exp_log(self, arr):
         assume(np.linalg.norm(arr) > DEFAULT_TOLERANCE)
         q = GeneralQuaternion(*arr).normalized()
-        assert exp(log(q)) == q
-        assert log(exp(q)) == GeneralQuaternion(*q.coordinates)
+        assert exp(log(q)).coordinates == pytest.approx(q.coordinates, abs=DEFAULT_TOLERANCE)
+        assert log(exp(q)).coordinates == pytest.approx(q.coordinates, abs=DEFAULT_TOLERANCE)
 
     @given(ANY_QUATERNION)
     def test_exp_identical_both_ways(self, arr):
@@ -125,3 +125,4 @@ class GeneralQuaternionTest(unittest.TestCase):
     def test_repr(self):
         gen_quat = GeneralQuaternion(1, 2, 3, 4)
         assert repr(gen_quat) == 'GeneralQuaternion(1, 2, 3, 4)'
+

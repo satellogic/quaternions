@@ -5,59 +5,53 @@ on:
     paths-ignore:
       - "*.md"
 
+# Cancel in-progress jobs when pushing to the same branch.
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   build:
-    # For compatibility with Python 3.4
-    runs-on: ubuntu-18.04
+    env:
+      UV_PUBLISH_USERNAME: __token__
+      UV_PUBLISH_PASSWORD: ${{ secrets.pypi_token }}
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        python-version: ["3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10"]
-    defaults:
-      run:
-        shell: bash
-
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', 'pypy3.10']
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Prepare Environment
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest==3.8.2
-          pip install coveralls
-          pip install -e ".[dev]"
-
-      - name: Flake8
-        run: |
-          flake8 quaternions
-
-      - name: Tests (3.4)
-        # Avoid .coveragerc in 3.4
-        if:
-          matrix.python-version == 3.4
-        run : |
-          pytest -v tests/
-
-      - name: Tests
-        if:
-          matrix.python-version >= 3.5
-        run: |
-          pytest -v --cov=quaternions --cov-report=  tests/
-
-      - name: Publish coverage to Coveralls
-        # If pushed / is a pull request against main repo
-        if:
-          ((github.event_name == 'push' && github.repository == 'satellogic/quaternions') ||
-          github.event.pull_request.base.repo.full_name == 'satellogic/quaternions') && matrix.python-version >= 3.5
-        uses: AndreMiras/coveralls-python-action@v20201129
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: py${{ matrix.python-version }}
-          parallel: true
-          debug: true
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Prepare Environment
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        uv venv
+        uv pip install --editable .[dev]
+    - name: Flake8
+      run: |
+        uv run flake8 quaternions
+    - name: Tests
+      run: |
+        uv run pytest -v --cov=quaternions --cov-report=  tests/
+    - name: Publish coverage to Coveralls
+      # If pushed / is a pull request against main repo
+      if:
+        ((github.event_name == 'push' && github.repository == 'satellogic/quaternions') ||
+        github.event.pull_request.base.repo.full_name == 'satellogic/quaternions')
+      uses: AndreMiras/coveralls-python-action@v20201129
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        flag-name: py${{ matrix.python-version }}
+        parallel: true
+        debug: true
+    - name: Publish to PyPI
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        uv build --sdist --wheel
+        uv publish
 
   coveralls-finish:
     needs: build
