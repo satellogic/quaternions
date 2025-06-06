@@ -23,7 +23,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Prepare Environment
-      if: startsWith(github.ref, 'refs/tags/')
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv venv && uv pip install hatch
@@ -46,6 +45,7 @@ jobs:
         parallel: true
         debug: true
     - name: Publish to PyPI
+      if: startsWith(github.ref, 'refs/tags/')
       run: |
         uv build --package mocket --sdist --wheel
         uv publish
