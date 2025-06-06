@@ -6,7 +6,8 @@ authors = [{ name = "Matias Graña", email = "matias@satellogic.com" }]
 readme = "README.md"
 requires-python = ">=3.4"
 dependencies = [
-    "numpy"
+    "numpy",
+    "importlib-metadata; python_version < '3.8'",
 ]
 license = {text = "GPLv3"}
 classifiers = [
