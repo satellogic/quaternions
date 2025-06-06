@@ -50,7 +50,7 @@ jobs:
     - name: Publish to PyPI
       if: startsWith(github.ref, 'refs/tags/')
       run: |
-        uv build --package mocket --sdist --wheel
+        uv build --sdist --wheel
         uv publish
 
   coveralls-finish:
