@@ -36,8 +36,8 @@ Repository = "https://github.com/satellogic/quaternions"
 requires = ["hatchling>=1.22.2"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["quaternions"]
+
 [tool.hatch.version]
 path = "quaternions/__init__.py"
-
-[tool.setuptools]
-packages = ["quaternions"]
