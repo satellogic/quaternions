@@ -1,13 +1,11 @@
 [project]
 name = "satellogic_quaternions"
-version = "0.1.7"
 description = "This is a library for dealing with quaternions in Python in a unified way."
 authors = [{ name = "Matias Graña", email = "matias@satellogic.com" }]
 readme = "README.md"
 requires-python = ">=3.4"
 dependencies = [
     "numpy",
-    "importlib-metadata; python_version < '3.8'",
 ]
 license = {text = "GPLv3"}
 classifiers = [
@@ -19,6 +17,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Utilities",
 ]
+dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
@@ -34,8 +33,11 @@ Homepage = "https://pypi.org/project/satellogic_quaternions"
 Repository = "https://github.com/satellogic/quaternions"
 
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.22.2"]
+build-backend = "hatchling.build"
 
-[tool.setuptools]
+[tool.hatch.build.targets.wheel]
 packages = ["quaternions"]
+
+[tool.hatch.version]
+path = "quaternions/__init__.py"
