@@ -257,6 +257,15 @@ class QuaternionTest(unittest.TestCase):
         average = Quaternion.average(*q_with_noise, weights=weights)
         assert average == q_with_noise[0] or average == -q_with_noise[0]
 
+        # test empty list averaging
+        try:
+            empty = Quaternion.average(*[])
+            self.fail('Expected QuaternionError exception to be raised')
+        except QuaternionError:
+            pass
+        except Exception:
+            self.fail('Expected QuaternionError exception to be raised')
+
     def test_apply(self):
         q = Quaternion(1, 2, 3, 4)
 

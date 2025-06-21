@@ -113,6 +113,9 @@ class Quaternion(GeneralQuaternion):
 
         See Averaging Quaternions, by Markley, Cheng, Crassidis, Oschman.
         """
+        if not quaternions:
+            raise QuaternionError('at least one Quaternion is required to compute average')
+
         b = np.array([q.coordinates for q in quaternions])
         if weights is None:
             weights = np.ones(len(quaternions))
